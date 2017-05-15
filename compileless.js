@@ -16,6 +16,9 @@ var render = function() {
     })
     .then(function(lessFiles) {
         var filePromises = [];
+        if (!fs.existsSync(outFolder)){
+            fs.mkdirSync(outFolder);
+        }
         for (var lF in lessFiles) {
             var lessFile = lessFiles[lF];
             var filePromise = less.render(fs.readFileSync(lessFolder + lessFile).toString())
