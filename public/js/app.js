@@ -58,13 +58,13 @@ app.config(['$routeProvider', function($routeProvider) {
         controllerAs: 'userListView',
         templateUrl : './views/event/userlist.html'
     })
-    
+
     .when('/me/events', {
         controller  : 'eventMembershipCtrl',
         controllerAs: 'eventMembershipView',
         templateUrl : './views/user/eventlist.html'
     })
-    
+
     .when('/changepassword', {
         controller  : 'changePasswordCtrl',
         controllerAs: 'changePasswordView',
@@ -283,7 +283,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj.isAuthed = function() {
         return(obj.authed);
     };
-    
+
     obj.login = function(creds, options) {
         return getTokenFromServer(creds)
         .then(function(token) {
@@ -991,7 +991,7 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
     };
     $scope.refresh();
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
-    
+
     $scope.joinPending = false;
     $scope.join = function() {
         //Make sure request can be made
@@ -1048,14 +1048,14 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
         //TODO: Either navigate to user's profile, or user's activity within the event
         console.log(post);
     };
-    
+
     $scope.resolveTimeString = function(time) {
         return timeService.timeSinceString(time);
     };
     $scope.resolveTime = function(time) {
         return timeService.timeAsUTC(time);
     };
-    
+
     $scope.voteDirection = function(post) {
         postListService.getCurrentVote(post);
     };
@@ -1067,11 +1067,11 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
             postListService.castVote(direction, post);
         }
     };
-    
+
     $scope.refresh();
 });
 
-app.controller('newPostCtrl', function($scope, $routeParams, userService, newPostService, contextEvent, navService) {
+app.controller('newPostCtrl', function($scope, $routeParams, userService, newPostService, contextEvent, markdownService, navService) {
     if(!userService.authed) {
         navService.login();
     }
@@ -1085,6 +1085,7 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newPos
         });
     };
     $scope.refresh();
+    $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
     $scope.newPost = newPostService.post;
     $scope.valid = newPostService.valid;
     $scope.newPostEnabled = function() {
@@ -1129,11 +1130,11 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
         });
     };
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
-    
+
     $scope.titleClick = function() {
         $window.open(contextPost.post.link, "_self");
     };
-    
+
     // OLD
     $scope.getTimeString = function(timeType) {
         if(!$scope.loaded) return "Somewhere back in time... or not.";
@@ -1145,12 +1146,12 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
         var time = $scope.post.time[timeType];
         return timeService.timeAsUTC(time);
     };
-    
+
     // NEW
     /**
      * Implement as a separate time directive
      */
-    
+
     $scope.currentVote = 0;
     $scope.voteDirection = function() {
         // return $scope.post.vote;

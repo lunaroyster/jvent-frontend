@@ -112,20 +112,20 @@ nav {
         li {
             list-style-type: circle;
         }
-    }    
+    }
 }
 
-#eventsView, #newEventView, #eventView, #postsView, #newPostView, #postView, 
+#eventsView, #newEventView, #eventView, #postsView, #newPostView, #postView,
 #userlistView, #eventMembershipView, #changePasswordView, #loginView, #logoutView,
 #signUpView, #fourOFourView {
     padding:1em 1em 0em 1em;
 }
 
 #eventsView {
-    
+
 }
 #newEventView {
-    
+
 }
 #eventView {
     height:100%;
@@ -175,9 +175,11 @@ nav {
     }
 }
 #newPostView {
+    padding: 0 0 0 0;
+    @highlight-bg: #1c1c1c; //Pick another color. Rename
     #titleBox {
         border:none;
-        background-color:#1c1c1c; //Something better
+        background-color: @highlight-bg;
         padding:1.5em;
         font-size:1.25em;
         height:initial;
@@ -188,6 +190,12 @@ nav {
         &:focus {
             outline:none;
             // Other visual changes
+        }
+    }
+    #previewbar {
+        background-color: @highlight-bg;
+        #postTextPreview {
+            word-wrap: break-word;
         }
     }
 }
@@ -248,10 +256,10 @@ nav {
             .margin-vertical;
             .panel;
             #rootcommentbox {
-                
+
             }
             #commentlist {
-                
+
             }
             .commentbox {
                 .margin-vertical;
@@ -273,25 +281,25 @@ nav {
     }
 }
 #userlistView {
-    
+
 }
 #eventMembershipView {
-    
+
 }
 #changePasswordView {
-    
+
 }
 #loginView {
-    
+
 }
 #logoutView {
-    
+
 }
 #signUpView {
-    
+
 }
 #fourOFourView {
-    
+
 }
 
 ::-webkit-scrollbar {

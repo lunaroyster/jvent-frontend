@@ -18,7 +18,8 @@
             </div>
             <!--Direct Media Upload-->
         </div>
-        <div class="col s12 m4">
+        <div id="previewbar" class="col s12 m4">
+            <div id="postTextPreview" class="markdowned" ng-bind-html="descriptionAsHTML(newPost.content.text)"></div>
             <!--Display-->
         </div>
     </div>
