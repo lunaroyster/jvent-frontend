@@ -3,6 +3,20 @@
 @highlight:     #26a69a;
 @background-dark:#0a0b0c;
 
+@primary: #1A1A1A;
+@p-2: darken(@primary, 10%);
+@p-1: darken(@primary, 5%);
+@p0: @primary;
+@p1: lighten(@primary, 5%);
+@p2: lighten(@primary, 10%);
+
+@secondary: teal;
+@s-2: darken(@secondary, 10%);
+@s-1: darken(@secondary, 5%);
+@s0: @secondary;
+@s1: lighten(@secondary, 5%);
+@s2: lighten(@secondary, 10%);
+
 @import url("https://fonts.googleapis.com/css?family=Open+Sans:300");
 
 
@@ -19,7 +33,7 @@
 }
 
 body {
-    background-color: @background;
+    background-color: @p-1;
     color: @text-light;
     margin:0;
     font-family:'Open Sans', sans-serif;
@@ -28,7 +42,7 @@ body {
 nav {
     opacity:0.9;
     position:fixed;
-    background-color: @background-dark;
+    background-color: @p-2;
     display:flex;
     ul {
         padding:0;
@@ -38,16 +52,16 @@ nav {
             display:inline-block;
             padding:0 2em 0 2em;
             transition-duration:0.3s;
-        }
-        li:hover {
-            background-color:#1b1e21;
+            &:hover {
+                background-color:@p-1;
+            }
         }
     }
 }
 #userDropdown {
     width:36em;
     padding:none;
-    background-color: @background-dark;
+    background-color: @p-2;
     > li {
         padding-right:0;
         padding-left:0;
@@ -82,7 +96,7 @@ nav {
     }
 }
 .event {
-    background-color:#262626;
+    background-color: @p0;
     width:312px;
     height:312px;
     display:inline-flex;
@@ -137,19 +151,22 @@ nav {
         height:35%;
         bottom:0;
         margin-bottom:0;
+        #controls {
+            background: @p-1;
+            height:100%;
+            padding:2em;
+            .fill {
+                width:100%;
+            }
+            #joinButton, #viewButton {
+                background-color: @p0;
+            }
+        }
     }
     #info {
-        background:#1e1e1e;
+        background: @p0;
         height:100%;
         padding:2em;
-    }
-    #controls {
-        background:#171717;
-        height:100%;
-        padding:2em;
-        .fill {
-            width:100%;
-        }
     }
 }
 #postsView {
@@ -157,7 +174,7 @@ nav {
         @post-height: 8em; //Something's wrong. This should work.
         margin: 0.5em;
         height: @post-height;
-        background-color: darken(@background, 5%);
+        background-color: @p0;
         .content {
             cursor: pointer;
             display: flex;
@@ -172,6 +189,9 @@ nav {
                 padding: 0.5em;
             }
         }
+    }
+    #newPostButton {
+        background-color: @p0;
     }
 }
 #newPostView {
@@ -201,12 +221,13 @@ nav {
 }
 #postView {
     .panel() {
-        background-color: darken(@background, 5%);
+        background-color: @p0;
         padding: 1em;
     }
     .margin-vertical() {
         margin-bottom: 0.5em;
     }
+    @postView-bg: @p-1;
     #postcontainer {
         margin: 1em;
         #controls {
@@ -217,7 +238,7 @@ nav {
                 #votebuttons {
                     display: inline-block;
                     padding: 1em;
-                    background-color: darken(@background, 7%);
+                    background-color: @postView-bg;
                     .votebutton {
                         transition: all 0.2s ease;
                         cursor: pointer;
@@ -226,10 +247,10 @@ nav {
                             font-size: 3em;
                         }
                         &.up {
-                            .activated(teal);
+                            .activated(@secondary);
                         }
                         &.down {
-                            .activated(teal);
+                            .activated(@secondary);
                         }
                         .activated(@color) {
                             color: @color;
@@ -248,7 +269,7 @@ nav {
             }
             #desc {
                 padding: 1em;
-                background-color: darken(@background, 7%);
+                background-color: @postView-bg;
                 .margin-vertical
             }
         }
@@ -263,7 +284,7 @@ nav {
             }
             .commentbox {
                 .margin-vertical;
-                background-color: darken(@background, 7%);
+                background-color: @postView-bg;
                 .commentTextBox {
                     width: 100%;
                     height: 8em;
@@ -303,9 +324,9 @@ nav {
 }
 
 ::-webkit-scrollbar {
-    background-color:#232323;
+    background-color:@p0;
     width:0.5em;
 }
 ::-webkit-scrollbar-thumb {
-    background-color:#141414;
+    background-color:@p-1;
 }
