@@ -310,14 +310,12 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj.onLogout = function(callback) {
         logoutCallbacks.push(callback);
     };
-    obj.register = function(email, username, password) {
+    obj.register = function(user) {
         var req = {
             method: 'POST',
             url: urlService.userSignUp(),
             data: {
-                email: email,
-                username: username,
-                password: password
+                user: user
             }
         };
         return $http(req)
@@ -1174,16 +1172,17 @@ app.controller('signUpCtrl', function($scope, userService, navService) {
     if(userService.authed) {
         navService.home();
     }
-    $scope.email;
-    $scope.username;
-    $scope.password;
-    $scope.repassword;
+    $scope.newUser = {};
+    $scope.newUser.email;
+    $scope.newUser.username;
+    $scope.newUser.password;
+    $scope.newUser.repassword;
     $scope.validPassword = function() {
-        return userService.validPassword($scope.password, $scope.repassword);
+        return userService.validPassword($scope.newUser.password, $scope.newUser.repassword);
     };
     $scope.createAccount = function () {
-        if($scope.validPassword() && $scope.email && $scope.username) {
-            userService.register($scope.email, $scope.username, $scope.password)
+        if($scope.validPassword() && $scope.newUser.email && $scope.newUser.username) {
+            userService.register($scope.newUser)
             .then(function(status) {
                 if(status.success) {
                     navService.login();
