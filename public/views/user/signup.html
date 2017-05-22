@@ -3,19 +3,19 @@
         <div class="col s12 m4 push-m4">
             <form>
                 <div class="input-field col s12">
-                    <input id="email" type="email" ng-model="email" class="validate">
+                    <input id="email" type="email" ng-model="newUser.email" class="validate">
                     <label for="email">Email</label>
                 </div>
                 <div class="input-field col s12">
-                    <input id="username" type="text" ng-model="username" class="validate">
+                    <input id="username" type="text" ng-model="newUser.username" class="validate">
                     <label for="username">Username</label>
                 </div>
                 <div class="input-field col s12 m6">
-                    <input id="password" type="password" ng-model="password" ng-class="{valid: validPassword()}">
+                    <input id="password" type="password" ng-model="newUser.password" ng-class="{valid: validPassword()}">
                     <label for="password">Password.</label>
                 </div>
                 <div class="input-field col s12 m6">
-                    <input id="repassword" type="password" ng-model="repassword" ng-class="{valid: validPassword()}">
+                    <input id="repassword" type="password" ng-model="newUser.repassword" ng-class="{valid: validPassword()}">
                     <label for="repassword">Password. Again.</label>
                 </div>
                 <div ng-bind=""></div>
