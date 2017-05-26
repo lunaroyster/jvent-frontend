@@ -1172,10 +1172,11 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     $scope.refresh();
 });
 
-app.controller('newPostCtrl', function($scope, $routeParams, userService, newPostService, contextEvent, markdownService, navService) {
+app.controller('newPostCtrl', function($scope, $routeParams, userService, newMediaService, newPostService, contextEvent, markdownService, navService) {
     if(!userService.authed) {
         navService.login();
     }
+    newPostService.reset();
     $scope.refresh = function() {
         return contextEvent.getEvent($routeParams.eventURL)
         .then(function(event) {
@@ -1188,17 +1189,20 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newPos
     $scope.refresh();
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
     $scope.newPost = newPostService.post;
-    $scope.valid = newPostService.valid;
+    $scope.validPost = newPostService.valid;
+    $scope.newMedia = newMediaService.media;
+    $scope.validMedia = newMediaService.valid;
     $scope.newPostEnabled = function() {
-        return !$scope.pendingRequest && $scope.valid.all();
+        var validMedia = $scope.validMedia.all()
+        return !$scope.pendingRequest && $scope.validPost.all() && (validMedia);
     };
     $scope.pendingRequest = false;
     $scope.createPost = function() {
         if(!$scope.pendingRequest) {
             $scope.pendingRequest = true;
             newPostService.publish()
-            .then(function(postURL) {
-                navService.post($scope.event.url, postURL);
+            .then(function(response) {
+                navService.post($scope.event.url, response.postURL);
             },
             function(err) {
                 for (var i = 0; i < err.length; i++) {
