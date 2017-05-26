@@ -443,19 +443,6 @@ app.service('jventService', function(urlService, $http, $q) {
             return res;
         });
     };
-    // this.createMediaPost = function(media, post, eventURL) {
-    //     var url = urlService.post(eventURL);
-    //     var data = {
-    //         post: post,
-    //         media: media
-    //     };
-    //     return $http.post(url, data)
-    //     .then(function(response){
-    //         var postURL = response.data.post.url;
-    //         var mediaURL = response.data.media.url;
-    //         return [postURL, mediaURL];
-    //     });
-    // }
     this.getPosts = function(eventURL) {
         var req = {
             method: 'GET',
@@ -927,7 +914,6 @@ app.factory('newMediaService', function(userService, contextEvent, validationSer
     }
     newMediaService.valid = valid;
     newMediaService.initialized = function() {
-        // return !angular.equals(newMediaService.media, {});
         if(!newMediaService.media.link) return false;
         return newMediaService.media.link!="";
     }
@@ -960,12 +946,10 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
         });
     };
     newPostService.publish = function() {
-        if(newMediaService.initialized()) { //IsMediaInitialized?
-            console.log("Post and media");
+        if(newMediaService.initialized()) {
             return publishPostAndMedia();
         }
         else {
-            console.log("Post");
             return publishPost();
         }
     };
