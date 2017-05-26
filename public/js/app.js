@@ -132,6 +132,10 @@ app.service('urlService', function() {
         return(this.postURL(eventURL, postURL) + 'vote/');
     };
 
+    this.media = function(eventURL) {
+        return(this.eventURL(eventURL) + 'media/');
+    };
+
     this.comment = function(eventURL, postURL) {
         return(this.postURL(eventURL, postURL) + 'comment/');
     };
@@ -421,17 +425,37 @@ app.service('jventService', function(urlService, $http, $q) {
             throw Error(); //TODO: Describe error
         });
     };
-    this.createPost = function(post, eventURL) {
+    this.createPost = function(media, post, eventURL) {
         var url = urlService.post(eventURL);
         var data = {
             post: post,
         };
+        if(!!media) {
+            data.media = media;
+        }
         return $http.post(url, data)
         .then(function(response){
-            var postURL = response.data.post.url;
-            return postURL;
+            var res = {};
+            res.postURL = response.data.post.url;
+            if(response.data.media) {
+                res.mediaURL = response.data.media.url;
+            }
+            return res;
         });
     };
+    // this.createMediaPost = function(media, post, eventURL) {
+    //     var url = urlService.post(eventURL);
+    //     var data = {
+    //         post: post,
+    //         media: media
+    //     };
+    //     return $http.post(url, data)
+    //     .then(function(response){
+    //         var postURL = response.data.post.url;
+    //         var mediaURL = response.data.media.url;
+    //         return [postURL, mediaURL];
+    //     });
+    // }
     this.getPosts = function(eventURL) {
         var req = {
             method: 'GET',
@@ -450,6 +474,17 @@ app.service('jventService', function(urlService, $http, $q) {
         return $http(req)
         .then(function(data) {
             return data.data.post;
+        });
+    };
+    this.createMedia = function(media, eventURL) {
+        var url = urlService.media(eventURL);
+        var data = {
+            media: media
+        };
+        return $http.post(url, data)
+        .then(function(response) {
+            var mediaURL = response.data.media.url;
+            return mediaURL;
         });
     };
     this.postVote = function(eventURL, postURL, direction) {
@@ -477,6 +512,7 @@ app.service('jventService', function(urlService, $http, $q) {
         });
     };
 });
+
 
 //  List Providers {
 app.factory('eventListService', function(jventService, $q) {
