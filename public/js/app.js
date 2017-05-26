@@ -191,6 +191,29 @@ app.service('navService', function($location) {
         $location.path('/signup');
     };
 });
+
+app.service('validationService', function() {
+    return function(value) {
+        return {
+            isLink: function() {
+                var linkRegex = new RegExp(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/);
+                return linkRegex.test(value);
+            },
+            inRange: function(min, max) {
+                return(value>=min && value<=max);
+            },
+            min: function(min) {
+                return(value>=min);
+            },
+            max: function(max){
+                return(value<=max);
+            },
+            isIn: function(array) {
+                return array.indexOf(value)!=-1;
+            }
+        }
+    }
+});
 //  }
 
 app.service('markdownService', function($sce) {
