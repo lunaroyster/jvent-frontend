@@ -938,16 +938,35 @@ app.factory('newMediaService', function(userService, contextEvent, validationSer
     return(newMediaService);
 });
 
+app.factory('newPostService', function(userService, contextEvent, newMediaService, validationService, jventService) {
     var newPostService = {};
     var post = {};
     newPostService.post = post;
+    newPostService.media = newMediaService.media;
+    var publishPost = function() {
+        if(!valid.all()) throw Error("Validation Failed");
+        return jventService.createPost(undefined, newPostService.post, contextEvent.event.url)
+        .then(function(response) {
+            reset();
+            return(response);
+        });
+    };
+    var publishPostAndMedia = function() {
+        if(!valid.all()||!newMediaService.valid.all()) throw Error("Validation Failed");
+        return jventService.createPost(newMediaService.media, newPostService.post, contextEvent.event.url)
+        .then(function(response) {
+            reset();
+            return(response);
+        });
+    };
     newPostService.publish = function() {
-        if(valid.all()) {
-            return jventService.createPost(newPostService.post, contextEvent.event.url)
-            .then(function(postURL) {
-                reset();
-                return(postURL);
-            });
+        if(newMediaService.initialized()) { //IsMediaInitialized?
+            console.log("Post and media");
+            return publishPostAndMedia();
+        }
+        else {
+            console.log("Post");
+            return publishPost();
         }
     };
     var valid = {
