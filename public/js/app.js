@@ -905,7 +905,39 @@ app.factory('newEventService', function(userService, validationService, jventSer
     return(newEventService);
 });
 
-app.factory('newPostService', function(userService, contextEvent, jventService) {
+app.factory('newMediaService', function(userService, contextEvent, validationService, jventService) {
+    var newMediaService = {};
+    var media = {};
+    newMediaService.media = media;
+    newMediaService.publish = function() {
+        if(!valid.all()) throw Error("Validation Failed");
+        return jventService.createMedia(newMediaService.media, contextEvent.event.url)
+        .then(function(mediaURL) {
+            reset();
+            return(mediaURL);
+        });
+    };
+    var valid = {
+        link: function() {
+            return validationService(newMediaService.   media.link).isLink();
+        },
+        all: function() {
+            return (valid.link());
+        }
+    }
+    newMediaService.valid = valid;
+    newMediaService.initialized = function() {
+        // return !angular.equals(newMediaService.media, {});
+        if(!newMediaService.media.link) return false;
+        return newMediaService.media.link!="";
+    }
+    var reset = function() {
+        newMediaService.media = {};
+    };
+    newMediaService.reset = reset;
+    return(newMediaService);
+});
+
     var newPostService = {};
     var post = {};
     newPostService.post = post;
@@ -928,8 +960,10 @@ app.factory('newPostService', function(userService, contextEvent, jventService) 
     };
     newPostService.valid = valid;
     var reset = function() {
+        newMediaService.reset();
         newPostService.post = {};
     };
+    newPostService.reset = reset;
     return(newPostService);
 });
 //  }
