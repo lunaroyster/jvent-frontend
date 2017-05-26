@@ -857,7 +857,7 @@ app.factory('contextPost', function(contextEvent, jventService, $q) {
 //  }q
 
 //  New Providers {
-app.factory('newEventService', function(userService, jventService) {
+app.factory('newEventService', function(userService, validationService, jventService) {
     var newEventService = {};
     var event = {};
     newEventService.event = event;
@@ -878,32 +878,24 @@ app.factory('newEventService', function(userService, jventService) {
     };
     var valid = {
         name: function() {
-            return (!!event.name && event.name.length>=4 && event.name.length<=64);
+            return (!!event.name && validationService(event.name.length).inRange(4, 64));
         },
         byline: function() {
-            if(event.byline) {
-                return (event.byline.length<=128);
-            }
-            else {
-                return true;
-            }
+            if(!event.byline) return true;
+            return validationService(event.byline.length).max(128);
         },
         description: function() {
-            if(event.description) {
-                return (event.description.length <=1024);
-            }
-            else {
-                return true;
-            }
+            if(!event.description) return true;
+            return validationService(event.description.length).max(1024);
         },
         visibility: function() {
-            return (event.visibility=="public"||event.visibility=="unlisted"||event.visibility=="private");
+            return validationService(event.visibility).isIn(["public", "unlisted", "private"]);
         },
         ingress: function() {
-            return (event.ingress=="everyone"||event.ingress=="link"||event.ingress=="invite");
+            return validationService(event.ingress).isIn(["everyone", "link", "invite"]);
         },
         comment: function() {
-            return (event.comment=="anyone"||event.comment=="attendee"||event.comment=="nobody");
+            return validationService(event.comment).isIn(["anyone", "attendee", "nobody"]);
         },
         all: function() {
             return (valid.name()&&valid.byline()&&valid.description()&&valid.visibility()&&valid.ingress()&&valid.comment());
@@ -928,8 +920,7 @@ app.factory('newPostService', function(userService, contextEvent, jventService) 
     };
     var valid = {
         title: function() {
-            var l = newPostService.post.title.length;
-            return(l<=144 && l>0);
+            return validationService(newPostService.post.title.length).inRange(1, 144);
         },
         all: function() {
             return (valid.title());
