@@ -504,6 +504,43 @@ app.service('jventService', function(urlService, $http, $q) {
     };
 });
 
+app.service('mediaService', function($http) {
+    return function(media) {
+        /* var requestFunction = function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://i.imgur.com/7hCs9b8.png', true);
+            xhr.responseType = 'blob';
+
+            xhr.onload = function(e) {
+              if (this.status == 200) {
+                var blob = new Blob([this.response], {type: 'image/png'});
+                console.log(URL.createObjectURL(blob))
+              }
+            };
+        }; */
+        var requestFunction = function() {
+            var config = {
+                method: 'GET',
+                url: media.link,
+                responseType: 'blob',
+                headers: {
+                   'Authorization': undefined
+                 },
+            };
+            return $http(config)
+            .then(function(response) {
+                var blob = new Blob([response.data], {type: response.headers('content-type')})
+                return URL.createObjectURL(blob);
+            });
+        };
+        var getMediaBlob = function() {
+            return requestFunction();
+        }
+        return {
+            getMediaBlob: getMediaBlob
+        }
+    }
+});
 
 //  List Providers {
 app.factory('eventListService', function(jventService, $q) {
