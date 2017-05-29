@@ -1255,10 +1255,16 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
 
 app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEvent, markdownService, timeService, navService, $sce, $window) {
     $scope.loaded = false;
-    $scope.loadPost = function(post) {
+    $scope.loadPost = function(response) {
+        var post = response.post;
         post.vote = contextPost.vote;
         $scope.post = post;
         $scope.loaded = true;
+        if(!response.mediaPromise) return;
+        response.mediaPromise
+        .then(function(mediaBlobURL) {
+            console.log(mediaBlobURL);
+        })
     };
     $scope.refresh = function() {
         contextEvent.getEvent($routeParams.eventURL)
