@@ -825,7 +825,7 @@ app.factory('contextEvent', function(eventMembershipService, jventService, $q) {
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, jventService, $q) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -839,6 +839,12 @@ app.factory('contextPost', function(contextEvent, jventService, $q) {
         lastUpdate = Date.now();
         contextPost.loadedPost = true;
     };
+    var resolveMedia = function() {
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            mediaService(contextPost.post.media).getMediaBlob()
+        })
+    }
     contextPost.getPost = function(postURL) {
         //Verify membership with contextEvent
         return $q(function(resolve, reject) {
@@ -855,6 +861,12 @@ app.factory('contextPost', function(contextEvent, jventService, $q) {
             else {
                 return contextPost.post;
             }
+        })
+        .then(function(post) {
+            var response = {post: post};
+            if(!post.media.media) return response;
+            response.mediaPromise = mediaService(post.media.media).getMediaBlob();
+            return response;
         });
     };
     var currentVote = 0;
