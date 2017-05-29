@@ -203,6 +203,10 @@ app.service('validationService', function() {
                 var linkRegex = new RegExp(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/);
                 return linkRegex.test(value);
             },
+            isEmail: function() {
+                var emailRegex = new RegExp(/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/);
+                return emailRegex.test(value);
+            },
             inRange: function(min, max) {
                 return(value>=min && value<=max);
             },
