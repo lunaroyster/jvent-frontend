@@ -864,7 +864,7 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
         })
         .then(function(post) {
             var response = {post: post};
-            if(!post.media.media) return response;
+            if(!post.media || !post.media.media) return response;
             response.mediaPromise = mediaService(post.media.media).getMediaBlob();
             return response;
         });
