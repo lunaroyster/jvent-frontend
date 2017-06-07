@@ -566,6 +566,35 @@ app.service('Post', function(jventService, Event) {
                 fn();
             }
         }
+        static deserializeArray(rawPostArray) {
+            var PostObjectArray = [];
+            for (var post of rawPostArray) {
+                PostObjectArray.push(new Post(post));
+            }
+            return PostObjectArray;
+        }
+        // get title() {
+        //     return this.title;
+        // };
+        // get body() {
+        //     return this.content.text;
+        // };
+        // get link() {
+        //     return this.content.link;
+        // };
+        // get url() {
+        //     return this.url;
+        // };
+
+        get vote() {
+            return 1
+        }
+        comment() {
+
+        }
+        static getPost() {
+
+        }
     }
     return Post;
 });
@@ -814,6 +843,9 @@ app.factory('postListService', function(contextEvent, jventService, $q) {
     };
     postListService.getCurrentVote = getCurrentVote;
     postListService.castVote = castVote;
+    postListService.post = function(post) {
+
+    }
     return postListService;
 });
 //  }
@@ -906,7 +938,7 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
     var castVote = function(direction) {
         if(direction==getCurrentVote()) return false;
         jventService.postVote(contextEvent.event.url, contextPost.post.url, direction);
-        currentVote = direction; //Only if jventService.postVote is successful
+        currentVote = direction; //TODO: Only if jventService.postVote is successful
         return;
     };
     contextPost.getCurrentVote = getCurrentVote;
