@@ -246,6 +246,8 @@ app.service('timeService', function() {
     };
 });
 
+
+
 app.factory('userService', function($rootScope, urlService, $http, $q) {
     var obj = {};
     obj.authed = false;
@@ -541,6 +543,34 @@ app.service('mediaService', function($http) {
         }
     }
 });
+
+app.service('Post', function(jventService, Event) {
+    var Post = class {
+        constructor(post) {
+            //initialize post
+            this._events = {};
+        }
+
+        // Event handling
+        on(name, handler) {
+            if(this._events.hasOwnProperty(name)) {
+                this._events[name].push(handler);
+            }
+            else {
+                this._events[name] = [handler];
+            }
+        }
+        invoke(name) {
+            if(!this._events.hasOwnProperty(name)) return;
+            for (var fn of this._events[name]) {
+                fn();
+            }
+        }
+    }
+    return Post;
+});
+
+// app.service('Event', function(Post) {})
 
 //  List Providers {
 app.factory('eventListService', function(jventService, $q) {
