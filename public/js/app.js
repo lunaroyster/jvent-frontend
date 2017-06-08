@@ -549,6 +549,16 @@ app.service('Post', function(jventService, Event) {
         constructor(post) {
             //initialize post
             this._events = {};
+            this._ = {
+                title: post.title,
+                url: post.url,
+                content: {
+                    text: post.content.text,
+                    link: post.content.link
+                }
+                vote: 0 //Initialize with post's vote
+            };
+            this.invoke("load");
         }
 
         // Event handling
@@ -566,6 +576,7 @@ app.service('Post', function(jventService, Event) {
                 fn();
             }
         }
+
         static deserializeArray(rawPostArray) {
             var PostObjectArray = [];
             for (var post of rawPostArray) {
@@ -574,24 +585,33 @@ app.service('Post', function(jventService, Event) {
             return PostObjectArray;
         }
         // get title() {
-        //     return this.title;
+        //     return this._.title;
         // };
         // get body() {
-        //     return this.content.text;
+        //     return this._.content.text;
         // };
         // get link() {
-        //     return this.content.link;
+        //     return this._.content.link;
         // };
         // get url() {
-        //     return this.url;
+        //     return this._.url;
         // };
 
         get vote() {
-            return 1
+            return this._.vote;
         }
-        comment() {
+        set vote(v) {
+            if(!this._.vote==v) {
+                this._.vote = v;
+                this.invoke("vote");
+            }
+        }
 
+        comment(comment) {
+            //TODO
+            this.invoke("comment"); //Comment as eventargs
         }
+
         static getPost() {
 
         }
