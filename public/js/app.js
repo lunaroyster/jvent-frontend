@@ -544,20 +544,23 @@ app.service('mediaService', function($http) {
     }
 });
 
-app.service('Post', function(jventService, Event) {
+app.service('Post', function(jventService) {
     var Post = class {
         constructor(post) {
             //initialize post
             this._events = {};
-            this._ = {
-                title: post.title,
-                url: post.url,
-                content: {
-                    text: post.content.text,
-                    link: post.content.link
-                }
-                vote: 0 //Initialize with post's vote
-            };
+            // this._ = {
+            //     title: post.title,
+            //     url: post.url,
+            //     content: {
+            //         text: post.content.text,
+            //         link: post.content.link
+            //     },
+            //
+            //     time: post.time,
+            //     vote: 0 //Initialize with post's vote
+            // };
+            this._ = post; //TODO: rename to _post?
             this.invoke("load");
         }
 
@@ -570,13 +573,20 @@ app.service('Post', function(jventService, Event) {
                 this._events[name] = [handler];
             }
         }
-        invoke(name) {
+        invoke(name, args) {
             if(!this._events.hasOwnProperty(name)) return;
+            if (!args || !args.length) args = [];
             for (var fn of this._events[name]) {
-                fn();
+                fn.apply(this, args);
             }
         }
 
+        static fromPostURL(postURL, eventURL) {
+            return jventService.getPost(postURL, eventURL)
+            .then(function(post) {
+                return new Post(post);
+            });
+        }
         static deserializeArray(rawPostArray) {
             var PostObjectArray = [];
             for (var post of rawPostArray) {
@@ -584,26 +594,32 @@ app.service('Post', function(jventService, Event) {
             }
             return PostObjectArray;
         }
-        // get title() {
-        //     return this._.title;
-        // };
-        // get body() {
-        //     return this._.content.text;
-        // };
-        // get link() {
-        //     return this._.content.link;
-        // };
-        // get url() {
-        //     return this._.url;
-        // };
 
+        get url() {
+            return this._.url;
+        };
+        get media() {
+            return this._.media;
+        }
+        get time() {
+            return this._.time;
+        }
+        get submitter() {
+            return this._.submitter;
+        }
+        get title() {
+            return this._.title;
+        }
+        get content() {
+            return this._.content;
+        }
         get vote() {
             return this._.vote;
         }
         set vote(v) {
-            if(!this._.vote==v) {
+            if(this._.vote!=v) {
                 this._.vote = v;
-                this.invoke("vote");
+                this.invoke("vote", [v]);
             }
         }
 
@@ -811,7 +827,7 @@ app.factory('userListService', function(contextEvent, jventService, $q) {
     return userListService;
 });
 
-app.factory('postListService', function(contextEvent, jventService, $q) {
+app.factory('postListService', function(Post, contextEvent, jventService, $q) {
     var postListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -831,41 +847,51 @@ app.factory('postListService', function(contextEvent, jventService, $q) {
         return (Date.now() - lastUpdate) < postListService.cacheTime;
     };
     var setPostList = function(postList, event) {
+        for (var post of postList) {
+            post.on("vote", function(direction) {
+                jventService.postVote(contextEvent.event.url, this.url, direction);
+            });
+        }
         postListService.postList = postList;
         postListService.eventURL = event.url;
         lastUpdate = Date.now();
         postListService.loadedPostList = true;
     };
+    var requiresUpdate = function() {
+        return(queryChange() || !fresh());
+    };
     postListService.getPostList = function(eventURL) {
         return contextEvent.getEvent(eventURL)
         .then(function(event) {
-            if(queryChange() || !fresh() || eventChange(event)) {
+            if(requiresUpdate() || eventChange(event)) {
                 return jventService.getPosts(eventURL)
-                .then(function(postList) {
+                .then(function(rawPostList) {
+                    var postList = Post.deserializeArray(rawPostList);
                     setPostList(postList, event);
-                    return postList;
+                    return {postList: postList};
                 });
             }
             else {
-                return (postListService.postList);
+                return ({postList: postListService.postList});
             }
         });
     };
-    var getCurrentVote;
-    var getCurrentVote = function(post) {
 
-    }
-    var castVote = function(direction, post) {
-        if(direction==getCurrentVote(post)) return false;
-        jventService.postVote(contextEvent.event.url, post.url, direction);
-        post.vote = direction;
-        return;
-    };
-    postListService.getCurrentVote = getCurrentVote;
-    postListService.castVote = castVote;
-    postListService.post = function(post) {
-
-    }
+    // var getCurrentVote;
+    // var getCurrentVote = function(post) {
+    //
+    // }
+    // var castVote = function(direction, post) {
+    //     if(direction==getCurrentVote(post)) return false;
+    //     jventService.postVote(contextEvent.event.url, post.url, direction);
+    //     post.vote = direction;
+    //     return;
+    // };
+    // postListService.getCurrentVote = getCurrentVote;
+    // postListService.castVote = castVote;
+    // postListService.post = function(post) {
+    //
+    // }
     return postListService;
 });
 //  }
@@ -907,7 +933,7 @@ app.factory('contextEvent', function(eventMembershipService, jventService, $q) {
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, Post, jventService, $q) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -917,6 +943,9 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
         return (Date.now() - lastUpdate) < contextPost.cacheTime;
     };
     var setPost = function(post) {
+        post.on("vote", function(direction) {
+            jventService.postVote(contextEvent.event.url, this.url, direction);
+        });
         contextPost.post = post;
         lastUpdate = Date.now();
         contextPost.loadedPost = true;
@@ -927,22 +956,21 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
             mediaService(contextPost.post.media).getMediaBlob()
         })
     }
+    var requiresUpdate = function(postURL) {
+        return(postURL!=contextPost.post.url||!fresh());
+    }
     contextPost.getPost = function(postURL) {
         //Verify membership with contextEvent
-        return $q(function(resolve, reject) {
-            resolve();
-        })
+        return $q((resolve, reject) => {resolve()})
         .then(function() {
-            if(postURL!=contextPost.post.url||!fresh()) {
-                return jventService.getPost(postURL, contextEvent.event.url)
+            if(requiresUpdate(postURL)) {
+                return Post.fromPostURL(postURL, contextEvent.event.url)
                 .then(function(post) {
                     setPost(post);
                     return post;
                 });
             }
-            else {
-                return contextPost.post;
-            }
+            return contextPost.post;
         })
         .then(function(post) {
             var response = {post: post};
@@ -951,30 +979,33 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
             return response;
         });
     };
-    var currentVote = 0;
-    var getCurrentVote = function() {
-        return currentVote;
-    };
-    var castVote = function(direction) {
-        if(direction==getCurrentVote()) return false;
-        jventService.postVote(contextEvent.event.url, contextPost.post.url, direction);
-        currentVote = direction; //TODO: Only if jventService.postVote is successful
-        return;
-    };
-    contextPost.getCurrentVote = getCurrentVote;
-    contextPost.castVote = castVote;
-    contextPost.vote = {
-        up: function() {
-            castVote(1);
-        },
-        down: function() {
-            castVote(-1);
-        },
-        un: function() {
-            castVote(0);
-        }
-    };
     return contextPost;
+
+    // contextPost.vote = {
+    //     up: function() {
+    //         castVote(1);
+    //     },
+    //     down: function() {
+    //         castVote(-1);
+    //     },
+    //     un: function() {
+    //         castVote(0);
+    //     }
+    // };
+
+    // var currentVote = 0;
+    // contextPost.getCurrentVote = getCurrentVote;
+    // contextPost.castVote = castVote;
+    // var getCurrentVote = function() {
+    //     return currentVote;
+    // };
+    // var castVote = function(direction) {
+    //     if(direction==getCurrentVote()) return false;
+    //     jventService.postVote(contextEvent.event.url, contextPost.post.url, direction);
+    //     currentVote = direction; //TODO: Only if jventService.postVote is successful
+    //     return;
+    // };
+
 });
 //  }q
 
@@ -1252,12 +1283,23 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
 
 //Post
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {
-    $scope.refresh = function() {
-        return postListService.getPostList($routeParams.eventURL)
-        .then(function(postList) {
-            $scope.postList = postList;
+    $scope.loaded = false;
+
+    $scope.initialize = function() {
+        contextEvent.getEvent($routeParams.eventURL)
+        .then(function(event) {
+            $scope.event = event;
+            return postListService.getPostList($routeParams.eventURL)
+            .then($scope.loadPosts);
         });
     };
+    $scope.loadPosts = function(response) {
+        var postList = response.postList;
+        $scope.postList = postList;
+        $scope.loaded = true;
+        //TODO: MEDIA?
+    };
+
     $scope.newPost = function() {
         navService.newPost(contextEvent.event.url);
     };
@@ -1277,18 +1319,21 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     };
 
     $scope.voteDirection = function(post) {
-        postListService.getCurrentVote(post);
+        // postListService.getCurrentVote(post);
+        return post.vote;
     };
     $scope.voteClick = function(direction, post) {
         if(direction==$scope.voteDirection(post)) {
-            postListService.castVote(0, post);
+            // postListService.castVote(0, post);
+            post.vote = 0;
         }
         else {
-            postListService.castVote(direction, post);
+            // postListService.castVote(direction, post);
+            post.vote = direction;
         }
     };
 
-    $scope.refresh();
+    $scope.initialize();
 });
 
 app.controller('newPostCtrl', function($scope, $routeParams, userService, newMediaService, newPostService, contextEvent, markdownService, navService) {
@@ -1337,18 +1382,9 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
 
 app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEvent, markdownService, timeService, navService, $sce, $window) {
     $scope.loaded = false;
-    $scope.loadPost = function(response) {
-        var post = response.post;
-        post.vote = contextPost.vote;
-        $scope.post = post;
-        $scope.loaded = true;
-        if(!response.mediaPromise) return;
-        response.mediaPromise
-        .then(function(mediaBlobURL) {
-            console.log(mediaBlobURL);
-        })
-    };
-    $scope.refresh = function() {
+    $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
+
+    $scope.initialize = function() {
         contextEvent.getEvent($routeParams.eventURL)
         .then(function(event) {
             $scope.event = event;
@@ -1359,13 +1395,21 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
             });
         });
     };
-    $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
+    $scope.loadPost = function(response) {
+        var post = response.post;
+        $scope.post = post;
+        $scope.loaded = true;
+        if(!response.mediaPromise) return;
+        response.mediaPromise
+        .then(function(mediaBlobURL) {
+            console.log(mediaBlobURL);
+        })
+    };
 
     $scope.titleClick = function() {
         $window.open(contextPost.post.link, "_self");
     };
 
-    // OLD
     $scope.getTimeString = function(timeType) {
         if(!$scope.loaded) return "Somewhere back in time... or not.";
         var time = $scope.post.time[timeType];
@@ -1377,26 +1421,20 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
         return timeService.timeAsUTC(time);
     };
 
-    // NEW
-    /**
-     * Implement as a separate time directive
-     */
-
-    $scope.currentVote = 0;
     $scope.voteDirection = function() {
-        // return $scope.post.vote;
-        return contextPost.getCurrentVote();
+        return $scope.post.vote;
     };
     $scope.voteClick = function(direction) {
-        // $scope.tempVote = direction; //HACK
         if(direction==$scope.voteDirection()) {
-            contextPost.castVote(0);
+            // contextPost.castVote(0);
+            $scope.post.vote = 0;
         }
         else {
-            contextPost.castVote(direction);
+            $scope.post.vote = direction;
         }
     };
-    $scope.refresh();
+
+    $scope.initialize();
 });
 
 //User
