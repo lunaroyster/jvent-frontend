@@ -877,21 +877,6 @@ app.factory('postListService', function(Post, contextEvent, jventService, $q) {
         });
     };
 
-    // var getCurrentVote;
-    // var getCurrentVote = function(post) {
-    //
-    // }
-    // var castVote = function(direction, post) {
-    //     if(direction==getCurrentVote(post)) return false;
-    //     jventService.postVote(contextEvent.event.url, post.url, direction);
-    //     post.vote = direction;
-    //     return;
-    // };
-    // postListService.getCurrentVote = getCurrentVote;
-    // postListService.castVote = castVote;
-    // postListService.post = function(post) {
-    //
-    // }
     return postListService;
 });
 //  }
@@ -980,34 +965,8 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         });
     };
     return contextPost;
-
-    // contextPost.vote = {
-    //     up: function() {
-    //         castVote(1);
-    //     },
-    //     down: function() {
-    //         castVote(-1);
-    //     },
-    //     un: function() {
-    //         castVote(0);
-    //     }
-    // };
-
-    // var currentVote = 0;
-    // contextPost.getCurrentVote = getCurrentVote;
-    // contextPost.castVote = castVote;
-    // var getCurrentVote = function() {
-    //     return currentVote;
-    // };
-    // var castVote = function(direction) {
-    //     if(direction==getCurrentVote()) return false;
-    //     jventService.postVote(contextEvent.event.url, contextPost.post.url, direction);
-    //     currentVote = direction; //TODO: Only if jventService.postVote is successful
-    //     return;
-    // };
-
 });
-//  }q
+//  }
 
 //  New Providers {
 app.factory('newEventService', function(userService, validationService, jventService) {
@@ -1319,16 +1278,13 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     };
 
     $scope.voteDirection = function(post) {
-        // postListService.getCurrentVote(post);
         return post.vote;
     };
     $scope.voteClick = function(direction, post) {
         if(direction==$scope.voteDirection(post)) {
-            // postListService.castVote(0, post);
             post.vote = 0;
         }
         else {
-            // postListService.castVote(direction, post);
             post.vote = direction;
         }
     };
