@@ -544,20 +544,23 @@ app.service('mediaService', function($http) {
     }
 });
 
-app.service('Post', function(jventService, Event) {
+app.service('Post', function(jventService) {
     var Post = class {
         constructor(post) {
             //initialize post
             this._events = {};
-            this._ = {
-                title: post.title,
-                url: post.url,
-                content: {
-                    text: post.content.text,
-                    link: post.content.link
-                }
-                vote: 0 //Initialize with post's vote
-            };
+            // this._ = {
+            //     title: post.title,
+            //     url: post.url,
+            //     content: {
+            //         text: post.content.text,
+            //         link: post.content.link
+            //     },
+            //
+            //     time: post.time,
+            //     vote: 0 //Initialize with post's vote
+            // };
+            this._ = post; //TODO: rename to _post?
             this.invoke("load");
         }
 
@@ -570,13 +573,20 @@ app.service('Post', function(jventService, Event) {
                 this._events[name] = [handler];
             }
         }
-        invoke(name) {
+        invoke(name, args) {
             if(!this._events.hasOwnProperty(name)) return;
+            if (!args || !args.length) args = [];
             for (var fn of this._events[name]) {
-                fn();
+                fn.apply(this, args);
             }
         }
 
+        static fromPostURL(postURL, eventURL) {
+            return jventService.getPost(postURL, eventURL)
+            .then(function(post) {
+                return new Post(post);
+            });
+        }
         static deserializeArray(rawPostArray) {
             var PostObjectArray = [];
             for (var post of rawPostArray) {
