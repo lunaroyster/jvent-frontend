@@ -594,26 +594,32 @@ app.service('Post', function(jventService) {
             }
             return PostObjectArray;
         }
-        // get title() {
-        //     return this._.title;
-        // };
-        // get body() {
-        //     return this._.content.text;
-        // };
-        // get link() {
-        //     return this._.content.link;
-        // };
-        // get url() {
-        //     return this._.url;
-        // };
 
+        get url() {
+            return this._.url;
+        };
+        get media() {
+            return this._.media;
+        }
+        get time() {
+            return this._.time;
+        }
+        get submitter() {
+            return this._.submitter;
+        }
+        get title() {
+            return this._.title;
+        }
+        get content() {
+            return this._.content;
+        }
         get vote() {
             return this._.vote;
         }
         set vote(v) {
-            if(!this._.vote==v) {
+            if(this._.vote!=v) {
                 this._.vote = v;
-                this.invoke("vote");
+                this.invoke("vote", [v]);
             }
         }
 
