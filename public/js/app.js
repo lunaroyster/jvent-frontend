@@ -1360,7 +1360,6 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
     $scope.loaded = false;
     $scope.loadPost = function(response) {
         var post = response.post;
-        post.vote = contextPost.vote;
         $scope.post = post;
         $scope.loaded = true;
         if(!response.mediaPromise) return;
@@ -1403,18 +1402,16 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
      * Implement as a separate time directive
      */
 
-    $scope.currentVote = 0;
     $scope.voteDirection = function() {
-        // return $scope.post.vote;
-        return contextPost.getCurrentVote();
+        return $scope.post.vote;
     };
     $scope.voteClick = function(direction) {
-        // $scope.tempVote = direction; //HACK
         if(direction==$scope.voteDirection()) {
-            contextPost.castVote(0);
+            // contextPost.castVote(0);
+            $scope.post.vote = 0;
         }
         else {
-            contextPost.castVote(direction);
+            $scope.post.vote = direction;
         }
     };
     $scope.refresh();
