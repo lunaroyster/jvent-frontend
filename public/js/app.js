@@ -1273,12 +1273,23 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
 
 //Post
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {
-    $scope.refresh = function() {
-        return postListService.getPostList($routeParams.eventURL)
-        .then(function(postList) {
-            $scope.postList = postList;
+    $scope.loaded = false;
+
+    $scope.initialize = function() {
+        contextEvent.getEvent($routeParams.eventURL)
+        .then(function(event) {
+            $scope.event = event;
+            return postListService.getPostList($routeParams.eventURL)
+            .then($scope.loadPosts);
         });
     };
+    $scope.loadPosts = function(response) {
+        var postList = response.postList;
+        $scope.postList = postList;
+        $scope.loaded = true;
+        //TODO: MEDIA?
+    };
+
     $scope.newPost = function() {
         navService.newPost(contextEvent.event.url);
     };
@@ -1298,18 +1309,21 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     };
 
     $scope.voteDirection = function(post) {
-        postListService.getCurrentVote(post);
+        // postListService.getCurrentVote(post);
+        return post.vote;
     };
     $scope.voteClick = function(direction, post) {
         if(direction==$scope.voteDirection(post)) {
-            postListService.castVote(0, post);
+            // postListService.castVote(0, post);
+            post.vote = 0;
         }
         else {
-            postListService.castVote(direction, post);
+            // postListService.castVote(direction, post);
+            post.vote = direction;
         }
     };
 
-    $scope.refresh();
+    $scope.initialize();
 });
 
 app.controller('newPostCtrl', function($scope, $routeParams, userService, newMediaService, newPostService, contextEvent, markdownService, navService) {
