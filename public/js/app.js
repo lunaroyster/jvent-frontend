@@ -923,7 +923,7 @@ app.factory('contextEvent', function(eventMembershipService, jventService, $q) {
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, Post, jventService, $q) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -933,6 +933,9 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
         return (Date.now() - lastUpdate) < contextPost.cacheTime;
     };
     var setPost = function(post) {
+        post.on("vote", function(direction) {
+            jventService.postVote(contextEvent.event.url, this.url, direction);
+        });
         contextPost.post = post;
         lastUpdate = Date.now();
         contextPost.loadedPost = true;
@@ -943,22 +946,21 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
             mediaService(contextPost.post.media).getMediaBlob()
         })
     }
+    var requiresUpdate = function(postURL) {
+        return(postURL!=contextPost.post.url||!fresh());
+    }
     contextPost.getPost = function(postURL) {
         //Verify membership with contextEvent
-        return $q(function(resolve, reject) {
-            resolve();
-        })
+        return $q((resolve, reject) => {resolve()})
         .then(function() {
-            if(postURL!=contextPost.post.url||!fresh()) {
-                return jventService.getPost(postURL, contextEvent.event.url)
+            if(requiresUpdate(postURL)) {
+                return Post.fromPostURL(postURL, contextEvent.event.url)
                 .then(function(post) {
                     setPost(post);
                     return post;
                 });
             }
-            else {
-                return contextPost.post;
-            }
+            return contextPost.post;
         })
         .then(function(post) {
             var response = {post: post};
@@ -967,30 +969,33 @@ app.factory('contextPost', function(contextEvent, mediaService, jventService, $q
             return response;
         });
     };
-    var currentVote = 0;
-    var getCurrentVote = function() {
-        return currentVote;
-    };
-    var castVote = function(direction) {
-        if(direction==getCurrentVote()) return false;
-        jventService.postVote(contextEvent.event.url, contextPost.post.url, direction);
-        currentVote = direction; //TODO: Only if jventService.postVote is successful
-        return;
-    };
-    contextPost.getCurrentVote = getCurrentVote;
-    contextPost.castVote = castVote;
-    contextPost.vote = {
-        up: function() {
-            castVote(1);
-        },
-        down: function() {
-            castVote(-1);
-        },
-        un: function() {
-            castVote(0);
-        }
-    };
     return contextPost;
+
+    // contextPost.vote = {
+    //     up: function() {
+    //         castVote(1);
+    //     },
+    //     down: function() {
+    //         castVote(-1);
+    //     },
+    //     un: function() {
+    //         castVote(0);
+    //     }
+    // };
+
+    // var currentVote = 0;
+    // contextPost.getCurrentVote = getCurrentVote;
+    // contextPost.castVote = castVote;
+    // var getCurrentVote = function() {
+    //     return currentVote;
+    // };
+    // var castVote = function(direction) {
+    //     if(direction==getCurrentVote()) return false;
+    //     jventService.postVote(contextEvent.event.url, contextPost.post.url, direction);
+    //     currentVote = direction; //TODO: Only if jventService.postVote is successful
+    //     return;
+    // };
+
 });
 //  }q
 
