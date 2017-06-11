@@ -827,7 +827,7 @@ app.factory('userListService', function(contextEvent, jventService, $q) {
     return userListService;
 });
 
-app.factory('postListService', function(contextEvent, jventService, $q) {
+app.factory('postListService', function(Post, contextEvent, jventService, $q) {
     var postListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -847,41 +847,51 @@ app.factory('postListService', function(contextEvent, jventService, $q) {
         return (Date.now() - lastUpdate) < postListService.cacheTime;
     };
     var setPostList = function(postList, event) {
+        for (var post of postList) {
+            post.on("vote", function(direction) {
+                jventService.postVote(contextEvent.event.url, this.url, direction);
+            });
+        }
         postListService.postList = postList;
         postListService.eventURL = event.url;
         lastUpdate = Date.now();
         postListService.loadedPostList = true;
     };
+    var requiresUpdate = function() {
+        return(queryChange() || !fresh());
+    };
     postListService.getPostList = function(eventURL) {
         return contextEvent.getEvent(eventURL)
         .then(function(event) {
-            if(queryChange() || !fresh() || eventChange(event)) {
+            if(requiresUpdate() || eventChange(event)) {
                 return jventService.getPosts(eventURL)
-                .then(function(postList) {
+                .then(function(rawPostList) {
+                    var postList = Post.deserializeArray(rawPostList);
                     setPostList(postList, event);
-                    return postList;
+                    return {postList: postList};
                 });
             }
             else {
-                return (postListService.postList);
+                return ({postList: postListService.postList});
             }
         });
     };
-    var getCurrentVote;
-    var getCurrentVote = function(post) {
 
-    }
-    var castVote = function(direction, post) {
-        if(direction==getCurrentVote(post)) return false;
-        jventService.postVote(contextEvent.event.url, post.url, direction);
-        post.vote = direction;
-        return;
-    };
-    postListService.getCurrentVote = getCurrentVote;
-    postListService.castVote = castVote;
-    postListService.post = function(post) {
-
-    }
+    // var getCurrentVote;
+    // var getCurrentVote = function(post) {
+    //
+    // }
+    // var castVote = function(direction, post) {
+    //     if(direction==getCurrentVote(post)) return false;
+    //     jventService.postVote(contextEvent.event.url, post.url, direction);
+    //     post.vote = direction;
+    //     return;
+    // };
+    // postListService.getCurrentVote = getCurrentVote;
+    // postListService.castVote = castVote;
+    // postListService.post = function(post) {
+    //
+    // }
     return postListService;
 });
 //  }
