@@ -1358,17 +1358,9 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
 
 app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEvent, markdownService, timeService, navService, $sce, $window) {
     $scope.loaded = false;
-    $scope.loadPost = function(response) {
-        var post = response.post;
-        $scope.post = post;
-        $scope.loaded = true;
-        if(!response.mediaPromise) return;
-        response.mediaPromise
-        .then(function(mediaBlobURL) {
-            console.log(mediaBlobURL);
-        })
-    };
-    $scope.refresh = function() {
+    $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
+
+    $scope.initialize = function() {
         contextEvent.getEvent($routeParams.eventURL)
         .then(function(event) {
             $scope.event = event;
@@ -1379,13 +1371,21 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
             });
         });
     };
-    $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
+    $scope.loadPost = function(response) {
+        var post = response.post;
+        $scope.post = post;
+        $scope.loaded = true;
+        if(!response.mediaPromise) return;
+        response.mediaPromise
+        .then(function(mediaBlobURL) {
+            console.log(mediaBlobURL);
+        })
+    };
 
     $scope.titleClick = function() {
         $window.open(contextPost.post.link, "_self");
     };
 
-    // OLD
     $scope.getTimeString = function(timeType) {
         if(!$scope.loaded) return "Somewhere back in time... or not.";
         var time = $scope.post.time[timeType];
@@ -1396,11 +1396,6 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
         var time = $scope.post.time[timeType];
         return timeService.timeAsUTC(time);
     };
-
-    // NEW
-    /**
-     * Implement as a separate time directive
-     */
 
     $scope.voteDirection = function() {
         return $scope.post.vote;
@@ -1414,7 +1409,8 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
             $scope.post.vote = direction;
         }
     };
-    $scope.refresh();
+
+    $scope.initialize();
 });
 
 //User
