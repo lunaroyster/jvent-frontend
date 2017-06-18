@@ -940,7 +940,11 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         return $q((resolve, reject) => {resolve()})
         .then(function() {
             if(requiresUpdate(postURL)) {
-                return Post.fromPostURL(postURL, contextEvent.event.url)
+                // return Post.fromPostURL(postURL, contextEvent.event.url)
+                return jventService.getPost(postURL, contextEvent.event.url)
+                .then(function(rawPost) {
+                    return new Post(rawPost);
+                })
                 .then(function(post) {
                     setPost(post);
                     return post;
@@ -1369,6 +1373,7 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
     };
 
     $scope.voteDirection = function() {
+        if(!$scope.post) return;
         return $scope.post.vote;
     };
     $scope.voteClick = function(direction) {
