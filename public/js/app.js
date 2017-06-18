@@ -549,18 +549,9 @@ app.service('Post', function(jventService) {
         constructor(post) {
             //initialize post
             this._events = {};
-            // this._ = {
-            //     title: post.title,
-            //     url: post.url,
-            //     content: {
-            //         text: post.content.text,
-            //         link: post.content.link
-            //     },
-            //
-            //     time: post.time,
-            //     vote: 0 //Initialize with post's vote
-            // };
+            this._time = {};
             this._ = post; //TODO: rename to _post?
+            this._time.fetch = Date.now();
             this.invoke("load");
         }
 
@@ -877,21 +868,6 @@ app.factory('postListService', function(Post, contextEvent, jventService, $q) {
         });
     };
 
-    // var getCurrentVote;
-    // var getCurrentVote = function(post) {
-    //
-    // }
-    // var castVote = function(direction, post) {
-    //     if(direction==getCurrentVote(post)) return false;
-    //     jventService.postVote(contextEvent.event.url, post.url, direction);
-    //     post.vote = direction;
-    //     return;
-    // };
-    // postListService.getCurrentVote = getCurrentVote;
-    // postListService.castVote = castVote;
-    // postListService.post = function(post) {
-    //
-    // }
     return postListService;
 });
 //  }
@@ -964,7 +940,11 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         return $q((resolve, reject) => {resolve()})
         .then(function() {
             if(requiresUpdate(postURL)) {
-                return Post.fromPostURL(postURL, contextEvent.event.url)
+                // return Post.fromPostURL(postURL, contextEvent.event.url)
+                return jventService.getPost(postURL, contextEvent.event.url)
+                .then(function(rawPost) {
+                    return new Post(rawPost);
+                })
                 .then(function(post) {
                     setPost(post);
                     return post;
@@ -980,34 +960,8 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         });
     };
     return contextPost;
-
-    // contextPost.vote = {
-    //     up: function() {
-    //         castVote(1);
-    //     },
-    //     down: function() {
-    //         castVote(-1);
-    //     },
-    //     un: function() {
-    //         castVote(0);
-    //     }
-    // };
-
-    // var currentVote = 0;
-    // contextPost.getCurrentVote = getCurrentVote;
-    // contextPost.castVote = castVote;
-    // var getCurrentVote = function() {
-    //     return currentVote;
-    // };
-    // var castVote = function(direction) {
-    //     if(direction==getCurrentVote()) return false;
-    //     jventService.postVote(contextEvent.event.url, contextPost.post.url, direction);
-    //     currentVote = direction; //TODO: Only if jventService.postVote is successful
-    //     return;
-    // };
-
 });
-//  }q
+//  }
 
 //  New Providers {
 app.factory('newEventService', function(userService, validationService, jventService) {
@@ -1319,16 +1273,13 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     };
 
     $scope.voteDirection = function(post) {
-        // postListService.getCurrentVote(post);
         return post.vote;
     };
     $scope.voteClick = function(direction, post) {
         if(direction==$scope.voteDirection(post)) {
-            // postListService.castVote(0, post);
             post.vote = 0;
         }
         else {
-            // postListService.castVote(direction, post);
             post.vote = direction;
         }
     };
@@ -1422,6 +1373,7 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
     };
 
     $scope.voteDirection = function() {
+        if(!$scope.post) return;
         return $scope.post.vote;
     };
     $scope.voteClick = function(direction) {
