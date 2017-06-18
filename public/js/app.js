@@ -549,18 +549,9 @@ app.service('Post', function(jventService) {
         constructor(post) {
             //initialize post
             this._events = {};
-            // this._ = {
-            //     title: post.title,
-            //     url: post.url,
-            //     content: {
-            //         text: post.content.text,
-            //         link: post.content.link
-            //     },
-            //
-            //     time: post.time,
-            //     vote: 0 //Initialize with post's vote
-            // };
+            this._time = {};
             this._ = post; //TODO: rename to _post?
+            this._time.fetch = Date.now();
             this.invoke("load");
         }
 
