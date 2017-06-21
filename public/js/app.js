@@ -544,6 +544,37 @@ app.service('mediaService', function($http) {
     }
 });
 
+app.service('Event', function(jventService) {
+    var Event = class {
+        constructor(event) {
+            this._events = {};
+            this._time = {};
+            this._ = event;
+            this._time.fetch = Date.now();
+            this.invoke("load");
+        }
+
+        // Event handling
+        on(name, handler) {
+            if(this._events.hasOwnProperty(name)) {
+                this._events[name].push(handler);
+            }
+            else {
+                this._events[name] = [handler];
+            }
+        }
+        invoke(name, args) {
+            if(!this._events.hasOwnProperty(name)) return;
+            if (!args || !args.length) args = [];
+            for (var fn of this._events[name]) {
+                fn.apply(this, args);
+            }
+        }
+
+    };
+    return Event;
+})
+
 app.service('Post', function(jventService) {
     var Post = class {
         constructor(post) {
@@ -1127,14 +1158,28 @@ app.controller('homeController', function($scope, $rootScope, userService, event
 });
 
 //Event
-app.controller('eventListCtrl', function($scope, eventListService, navService) {
-    $scope.refresh = function() {
-        return eventListService.getEventList()
-        .then(function(eventList) {
+app.controller('eventListCtrl', function($scope, eventListService, navService, mediaService, $q) {
+    $scope.loadEvents = function(eventList) {
+        //  TODO: Super temporary. Get rid of this crap.
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
             $scope.eventArray = eventList;
-        });
+            var mediaPromises = [];
+            for (let event of eventList) {
+                if(!event.backgroundImage) continue;
+                mediaPromises.push(mediaService(event.backgroundImage).getMediaBlob()
+                .then(function(blobURL) {
+                    event.image = blobURL;
+                }));
+            }
+            return $q.all(mediaPromises);
+        })
+    }
+    $scope.initialize = function() {
+        return eventListService.getEventList()
+        .then($scope.loadEvents);
     };
-    $scope.refresh();
+    $scope.initialize();
     // $scope.query = {
     //     find: {
     //         time: {
