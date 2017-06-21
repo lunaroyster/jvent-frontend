@@ -1158,15 +1158,26 @@ app.controller('homeController', function($scope, $rootScope, userService, event
 });
 
 //Event
-app.controller('eventListCtrl', function($scope, eventListService, navService) {
-    $scope.loadEvents = function(response) {
-
+app.controller('eventListCtrl', function($scope, eventListService, navService, mediaService, $q) {
+    $scope.loadEvents = function(eventList) {
+        //  TODO: Super temporary. Get rid of this crap.
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            $scope.eventArray = eventList;
+            var mediaPromises = [];
+            for (let event of eventList) {
+                if(!event.backgroundImage) continue;
+                mediaPromises.push(mediaService(event.backgroundImage).getMediaBlob()
+                .then(function(blobURL) {
+                    event.image = blobURL;
+                }));
+            }
+            return $q.all(mediaPromises);
+        })
     }
     $scope.initialize = function() {
         return eventListService.getEventList()
-        .then(function(eventList) {
-            $scope.eventArray = eventList;
-        });
+        .then($scope.loadEvents);
     };
     $scope.initialize();
     // $scope.query = {
