@@ -570,10 +570,40 @@ app.service('Event', function(jventService) {
                 fn.apply(this, args);
             }
         }
-
+        
+        static deserializeArray(rawEventArray) {
+            var EventObjectArray = [];
+            for (var event of rawEventArray) {
+                EventObjectArray.push(new Event(event));
+            }
+            return EventObjectArray;
+        }
+        
+        get url() {
+            return this._.url;
+        }
+        get visibility() {
+            return this._.visibility;
+        }
+        get ingress() {
+            return this._.ingress;
+        }
+        get name() {
+            return this._.name;
+        }
+        get organizer() {
+            return this._.organizer;
+        }
+        get byline() {
+            return this._.byline;
+        }
+        get backgroundImage() {
+            return this._.backgroundImage;
+        }
+        
     };
     return Event;
-})
+});
 
 app.service('Post', function(jventService) {
     var Post = class {
@@ -904,7 +934,7 @@ app.factory('postListService', function(Post, contextEvent, jventService, $q) {
 //  }
 
 //  Context Providers {
-app.factory('contextEvent', function(eventMembershipService, jventService, $q) {
+app.factory('contextEvent', function(eventMembershipService, Event, jventService, $q) {
     var contextEvent = {};
     contextEvent.event = {};
     contextEvent.cacheTime = 60000;
@@ -913,25 +943,28 @@ app.factory('contextEvent', function(eventMembershipService, jventService, $q) {
     var fresh = function() {
         return (Date.now() - lastUpdate) < contextEvent.cacheTime;
     };
-    //heart
     var setEvent = function(event) {
         contextEvent.event = event;
         lastUpdate = Date.now();
         contextEvent.loadedEvent = true;
     };
+    var requiresUpdate = function(eventURL) {
+        return(eventURL!=contextEvent.event.url||!fresh());
+    };
     contextEvent.getEvent = function(eventURL) {
-        return eventMembershipService.isEventRole("moderator", eventURL)
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            return eventMembershipService.isEventRole("moderator", eventURL);
+        })
         .then(function(result) {
-            if(eventURL!=contextEvent.event.url||!fresh()) {
+            if(requiresUpdate(eventURL)) {
                 return jventService.getEvent(eventURL, result)
                 .then(function(event) {
                     setEvent(event);
                     return event;
                 });
             }
-            else {
-                return contextEvent.event;
-            }
+            return contextEvent.event;
         });
     };
     contextEvent.join = function() {
