@@ -601,6 +601,13 @@ app.service('Event', function(jventService) {
             return this._.backgroundImage;
         }
         
+        join() {
+            // return jventService.joinEvent(this.url)
+            // .then(function() {
+            this.invoke("join");
+            // });
+        }
+        
     };
     return Event;
 });
@@ -944,6 +951,9 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
         return (Date.now() - lastUpdate) < contextEvent.cacheTime;
     };
     var setEvent = function(event) {
+        event.on("join", function() {
+           jventService.joinEvent(event.url); 
+        });
         contextEvent.event = event;
         lastUpdate = Date.now();
         contextEvent.loadedEvent = true;
@@ -959,6 +969,9 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
         .then(function(result) {
             if(requiresUpdate(eventURL)) {
                 return jventService.getEvent(eventURL, result)
+                .then(function(rawEvent) {
+                    return new Event(rawEvent);
+                })
                 .then(function(event) {
                     setEvent(event);
                     return event;
