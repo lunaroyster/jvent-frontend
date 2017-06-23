@@ -570,9 +570,9 @@ app.service('Event', function(jventService, $q) {
             for (var fn of this._events[name]) {
                 res.push(fn.apply(this, args));
             }
-            return res; 
+            return res;
         }
-        
+
         static deserializeArray(rawEventArray) {
             var EventObjectArray = [];
             for (var event of rawEventArray) {
@@ -580,7 +580,7 @@ app.service('Event', function(jventService, $q) {
             }
             return EventObjectArray;
         }
-        
+
         get url() {
             return this._.url;
         }
@@ -602,17 +602,17 @@ app.service('Event', function(jventService, $q) {
         get backgroundImage() {
             return this._.backgroundImage;
         }
-        
+
         join() {
             var promises = this.invoke("join");
             return $q.all(promises);
         }
-        
+
     };
     return Event;
 });
 
-app.service('Post', function(jventService) {
+app.service('Post', function(jventService, $q) {
     var Post = class {
         constructor(post) {
             //initialize post
@@ -633,11 +633,13 @@ app.service('Post', function(jventService) {
             }
         }
         invoke(name, args) {
+            var res = [];
             if(!this._events.hasOwnProperty(name)) return;
             if (!args || !args.length) args = [];
             for (var fn of this._events[name]) {
-                fn.apply(this, args);
+                res.push(fn.apply(this, args));
             }
+            return res;
         }
 
         static fromPostURL(postURL, eventURL) {
@@ -683,8 +685,8 @@ app.service('Post', function(jventService) {
         }
 
         comment(comment) {
-            //TODO
-            this.invoke("comment"); //Comment as eventargs
+            var promises = this.invoke("comment"); //Comment as eventArgs
+            return $q.all(promises);
         }
 
         static getPost() {
@@ -953,7 +955,7 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
     var setEvent = function(event) {
         event.on("join", function() {
             console.log("Joining event");
-            return jventService.joinEvent(event.url); 
+            return jventService.joinEvent(event.url);
         });
         contextEvent.event = event;
         lastUpdate = Date.now();
@@ -998,7 +1000,8 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
     };
     var setPost = function(post) {
         post.on("vote", function(direction) {
-            jventService.postVote(contextEvent.event.url, this.url, direction);
+            console.log("Voting");
+            return jventService.postVote(contextEvent.event.url, this.url, direction);
         });
         contextPost.post = post;
         lastUpdate = Date.now();
@@ -1206,6 +1209,12 @@ app.controller('homeController', function($scope, $rootScope, userService, event
 
 //Event
 app.controller('eventListCtrl', function($scope, eventListService, navService, mediaService, $q) {
+    $scope.loadEventMedia = function(event) {
+        return mediaService(event.backgroundImage).getMediaBlob()
+        .then(function(blobURL) {
+            event.image = blobURL;
+        })
+    }
     $scope.loadEvents = function(eventList) {
         //  TODO: Super temporary. Get rid of this crap.
         return $q((resolve, reject) => {resolve()})
@@ -1214,10 +1223,7 @@ app.controller('eventListCtrl', function($scope, eventListService, navService, m
             var mediaPromises = [];
             for (let event of eventList) {
                 if(!event.backgroundImage) continue;
-                mediaPromises.push(mediaService(event.backgroundImage).getMediaBlob()
-                .then(function(blobURL) {
-                    event.image = blobURL;
-                }));
+                mediaPromises.push($scope.loadEventMedia(event));
             }
             return $q.all(mediaPromises);
         })
