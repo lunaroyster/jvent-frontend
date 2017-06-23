@@ -544,7 +544,7 @@ app.service('mediaService', function($http) {
     }
 });
 
-app.service('Event', function(jventService) {
+app.service('Event', function(jventService, $q) {
     var Event = class {
         constructor(event) {
             this._events = {};
@@ -564,11 +564,13 @@ app.service('Event', function(jventService) {
             }
         }
         invoke(name, args) {
+            var res = [];
             if(!this._events.hasOwnProperty(name)) return;
             if (!args || !args.length) args = [];
             for (var fn of this._events[name]) {
-                fn.apply(this, args);
+                res.push(fn.apply(this, args));
             }
+            return res; 
         }
         
         static deserializeArray(rawEventArray) {
@@ -602,10 +604,7 @@ app.service('Event', function(jventService) {
         }
         
         join() {
-            // return jventService.joinEvent(this.url)
-            // .then(function() {
-            this.invoke("join");
-            // });
+            return $q.all(this.invoke("join"));
         }
         
     };
@@ -980,9 +979,9 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
             return contextEvent.event;
         });
     };
-    contextEvent.join = function() {
-        return jventService.joinEvent(contextEvent.event.url);
-    };
+    // contextEvent.join = function() {
+    //     return jventService.joinEvent(contextEvent.event.url);
+    // };
     return contextEvent;
 });
 
@@ -1292,9 +1291,10 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
     $scope.join = function() {
         //Make sure request can be made
         $scope.joinPending = true;
-        contextEvent.join()
+        contextEvent.event.join()
         .then(function() {
             //Redirect to content upon success
+            console.log("Joining event")
         })
         .catch(function(err) {
             //err
