@@ -604,7 +604,8 @@ app.service('Event', function(jventService, $q) {
         }
         
         join() {
-            return $q.all(this.invoke("join"));
+            var promises = this.invoke("join");
+            return $q.all(promises);
         }
         
     };
@@ -951,7 +952,8 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
     };
     var setEvent = function(event) {
         event.on("join", function() {
-           jventService.joinEvent(event.url); 
+            console.log("Joining event");
+            return jventService.joinEvent(event.url); 
         });
         contextEvent.event = event;
         lastUpdate = Date.now();
@@ -1294,7 +1296,7 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
         contextEvent.event.join()
         .then(function() {
             //Redirect to content upon success
-            console.log("Joining event")
+            console.log("Joined event");
         })
         .catch(function(err) {
             //err
