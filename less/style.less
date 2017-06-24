@@ -132,6 +132,32 @@ nav {
     }
 }
 
+.votebox(@votebutton-bg) {
+    text-align: center;
+    .votebuttons {
+        display: inline-block;
+        padding: 1em;
+        background-color: @votebutton-bg;
+        .votebutton {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+            .material-icons {
+                font-size: 3em;
+            }
+            &.up {
+                .activated(@secondary);
+            }
+            &.down {
+                .activated(@secondary);
+            }
+            .activated(@color) {
+                color: @color;
+                background-color: fadeout(@color, 85%);
+            }
+        }
+    }
+}
 #eventsView, #newEventView, #eventView, #postsView, #newPostView, #postView,
 #userlistView, #eventMembershipView, #changePasswordView, #loginView, #logoutView,
 #signUpView, #fourOFourView {
@@ -207,6 +233,13 @@ nav {
                     }
                 }
             }
+            .voteContainer {
+                display: inline-block;
+                // margin: 0.5;
+                width: @post-height;
+                // .votebox(@p1);
+                .votebox(@p-1);
+            }
         }
     }
     #newPostButton {
@@ -252,32 +285,7 @@ nav {
         #controls {
             width: 100%;
             .panel;
-            #votebox {
-                text-align: center;
-                #votebuttons {
-                    display: inline-block;
-                    padding: 1em;
-                    background-color: @postView-bg;
-                    .votebutton {
-                        transition: all 0.2s ease;
-                        cursor: pointer;
-                        user-select: none;
-                        .material-icons {
-                            font-size: 3em;
-                        }
-                        &.up {
-                            .activated(@secondary);
-                        }
-                        &.down {
-                            .activated(@secondary);
-                        }
-                        .activated(@color) {
-                            color: @color;
-                            background-color: fadeout(@color, 85%);
-                        }
-                    }
-                }
-            }
+            .votebox(@postView-bg);
         }
         #post {
             .margin-vertical;
