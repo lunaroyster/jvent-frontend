@@ -17,6 +17,9 @@
 @s1: lighten(@secondary, 5%);
 @s2: lighten(@secondary, 10%);
 
+@text-primary: #ffffff;
+@text-grey: #888888;
+
 @import url("https://fonts.googleapis.com/css?family=Open+Sans:300");
 
 
@@ -34,7 +37,7 @@
 
 body {
     background-color: @p-1;
-    color: @text-light;
+    color: @text-primary;
     margin:0;
     font-family:'Open Sans', sans-serif;
     font-weight:100;
@@ -89,7 +92,7 @@ nav {
 }
 #secondary {
 }
-.organizer {
+.organizer, .submitter {
     transition-duration:0.2s;
     &:hover {
         color: @highlight;
@@ -184,9 +187,25 @@ nav {
                 width: @post-height;
             }
             .otherContainer {
+                position: relative;
                 display: inline-block;
                 flex-grow: 1;
-                padding: 0.5em;
+                margin: 0.5em;
+                .title {
+                    font-size: larger;
+                }
+                .meta {
+                    position: absolute;
+                    bottom: 0;
+                    .time {
+                        display: inline-block;
+                        font-size: smaller;
+                        color: @text-grey;
+                    }
+                    .submitter {
+                        display: inline-block;
+                    }
+                }
             }
         }
     }
