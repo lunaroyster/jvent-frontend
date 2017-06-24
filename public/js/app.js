@@ -907,13 +907,14 @@ app.factory('postListService', function(Post, contextEvent, jventService, $q) {
     var fresh = function() {
         return (Date.now() - lastUpdate) < postListService.cacheTime;
     };
-    var setPostList = function(postList, event) {
-        for (var post of postList) {
+    var setPostList = function(rawPostList, event) {
+        var newPostList = Post.deserializeArray(rawPostList);
+        for (var post of newPostList) {
             post.on("vote", function(direction) {
-                jventService.postVote(contextEvent.event.url, this.url, direction);
+                return jventService.postVote(contextEvent.event.url, this.url, direction);
             });
         }
-        postListService.postList = postList;
+        postListService.postList = newPostList;
         postListService.eventURL = event.url;
         lastUpdate = Date.now();
         postListService.loadedPostList = true;
@@ -927,14 +928,13 @@ app.factory('postListService', function(Post, contextEvent, jventService, $q) {
             if(requiresUpdate() || eventChange(event)) {
                 return jventService.getPosts(eventURL)
                 .then(function(rawPostList) {
-                    var postList = Post.deserializeArray(rawPostList);
-                    setPostList(postList, event);
-                    return {postList: postList};
+                    setPostList(rawPostList, event);
+                    return;
                 });
             }
-            else {
-                return ({postList: postListService.postList});
-            }
+        })
+        .then(function() {
+            return({postList: postListService.postList});
         });
     };
 
@@ -1000,7 +1000,6 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
     };
     var setPost = function(post) {
         post.on("vote", function(direction) {
-            console.log("Voting");
             return jventService.postVote(contextEvent.event.url, this.url, direction);
         });
         contextPost.post = post;
@@ -1347,8 +1346,7 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
         });
     };
     $scope.loadPosts = function(response) {
-        var postList = response.postList;
-        $scope.postList = postList;
+        $scope.postList = response.postList;
         $scope.loaded = true;
         //TODO: MEDIA?
     };

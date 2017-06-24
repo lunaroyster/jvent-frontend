@@ -14,13 +14,13 @@
           </div>
           <!--<span ng-bind="content.text"></span> Handle this and media later-->
         </div>
-        <div class="voteContainer">
+        <div class="voteContainer" ng-click="$event.stopPropagation()">
           <div class="votebox">
               <div class="votebuttons">
-                  <div id="up" class="votebutton" ng-class="{'up':voteDirection()==1}" ng-click="voteClick(1)"> 
+                  <div id="up" class="votebutton" ng-class="{'up':voteDirection(post)==1}" ng-click="voteClick(1, post)"> 
                       <i class="material-icons">keyboard_arrow_up</i>
                   </div>
-                  <div id="down" class="votebutton" ng-class="{'down':voteDirection()==-1}" ng-click="voteClick(-1)">
+                  <div id="down" class="votebutton" ng-class="{'down':voteDirection(post)==-1}" ng-click="voteClick(-1, post)">
                       <i class="material-icons">keyboard_arrow_down</i>
                   </div>
               </div>
