@@ -544,6 +544,73 @@ app.service('mediaService', function($http) {
     }
 });
 
+app.service('Media', function($http, $q) {
+    var Media = class {
+        constructor(media) {
+            this._events = {};
+            this._time = {};
+            this._ = media;
+            this._time.fetch = Date.now();
+            this.invoke("load");
+        }
+        
+        // Event handling
+        on(name, handler) {
+            if(this._events.hasOwnProperty(name)) {
+                this._events[name].push(handler);
+            }
+            else {
+                this._events[name] = [handler];
+            }
+        }
+        invoke(name, args) {
+            var res = [];
+            if(!this._events.hasOwnProperty(name)) return;
+            if (!args || !args.length) args = [];
+            for (var fn of this._events[name]) {
+                res.push(fn.apply(this, args));
+            }
+            return res;
+        }
+        
+        getAsBlob() {
+            return $q((resolve, reject) => {resolve()})
+            .then(function() {
+                if(this._blobURL) return;
+                var config = {
+                    method: 'GET',
+                    url: this.link,
+                    responseType: 'blob',
+                    headers: {
+                       'Authorization': undefined
+                     },
+                };
+                return $http(config)
+                .then(Media.blobifyResponseData)
+                .then(function(blobURL) {
+                    this._blobURL = blobURL;
+                    this.invoke("blobURL-change", [blobURL]);
+                });
+            })
+            .then(function() {
+                return this._blobURL;
+            });
+        }
+        
+        static blobifyResponseData(response) {
+            var blob = new Blob([response.data])
+            var blobURL = URL.createObjectURL(blob);
+            return blobURL;
+        }
+        
+        get link() {
+            return this._.link;
+        }
+        
+    };
+    return Media;
+});
+
 app.service('Event', function(jventService, $q) {
     var Event = class {
         constructor(event) {
