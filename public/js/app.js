@@ -670,6 +670,10 @@ app.service('Event', function(jventService, $q) {
         get backgroundImage() {
             return this._.backgroundImage;
         }
+        
+        set backgroundImage(value) {
+            this._.backgroundImage = value;
+        }
 
         join() {
             var promises = this.invoke("join");
@@ -767,7 +771,7 @@ app.service('Post', function(jventService, $q) {
 // app.service('Event', function(Post) {})
 
 //  List Providers {
-app.factory('eventListService', function(jventService, $q) {
+app.factory('eventListService', function(jventService, Event, Media, $q) {
     var eventListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -782,23 +786,27 @@ app.factory('eventListService', function(jventService, $q) {
         //TODO: compare eventListService.query and lastQuery
         return false;
     };
-    var setEventList = function(eventList) {
-        eventListService.eventList = eventList;
+    var setEventList = function(rawEventList) {
+        var newEventList = Event.deserializeArray(rawEventList);
+        for (var event of newEventList) {
+            event.backgroundImage = new Media(event.backgroundImage);
+        }
+        eventListService.eventList = newEventList;
         lastUpdate = Date.now();
         eventListService.loadedEventList = true;
     };
     eventListService.getEventList = function() {
-        return $q(function(resolve, reject) {
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
             if(queryChange() || !fresh()) {
                 return jventService.getEvents()
-                .then(function(eventList) {
-                    setEventList(eventList);
-                    return resolve(eventList);
+                .then(function(rawEventList) {
+                    setEventList(rawEventList);
                 });
             }
-            else {
-                return resolve(eventListService.eventList);
-            }
+        })
+        .then(function() {
+            return(eventListService.eventList);
         });
     };
     return eventListService;
@@ -1280,10 +1288,10 @@ app.controller('homeController', function($scope, $rootScope, userService, event
 //Event
 app.controller('eventListCtrl', function($scope, eventListService, navService, mediaService, $q) {
     $scope.loadEventMedia = function(event) {
-        return mediaService(event.backgroundImage).getMediaBlob()
+        return event.backgroundImage.getAsBlob()
         .then(function(blobURL) {
             event.image = blobURL;
-        })
+        });
     }
     $scope.loadEvents = function(eventList) {
         //  TODO: Super temporary. Get rid of this crap.
