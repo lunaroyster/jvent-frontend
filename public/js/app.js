@@ -574,12 +574,13 @@ app.service('Media', function($http, $q) {
         }
         
         getAsBlob() {
+            var _this = this;
             return $q((resolve, reject) => {resolve()})
             .then(function() {
-                if(this._blobURL) return;
+                if(_this._blobURL) return;
                 var config = {
                     method: 'GET',
-                    url: this.link,
+                    url: _this.link,
                     responseType: 'blob',
                     headers: {
                        'Authorization': undefined
@@ -588,17 +589,17 @@ app.service('Media', function($http, $q) {
                 return $http(config)
                 .then(Media.blobifyResponseData)
                 .then(function(blobURL) {
-                    this._blobURL = blobURL;
-                    this.invoke("blobURL-change", [blobURL]);
+                    _this._blobURL = blobURL;
+                    _this.invoke("blobURL-change", [blobURL]);
                 });
             })
             .then(function() {
-                return this._blobURL;
+                return _this._blobURL;
             });
         }
         
         static blobifyResponseData(response) {
-            var blob = new Blob([response.data])
+            var blob = new Blob([response.data], {type: response.headers('content-type')})
             var blobURL = URL.createObjectURL(blob);
             return blobURL;
         }
@@ -1056,7 +1057,7 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, Post, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, Media, Post, jventService, $q) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -1069,16 +1070,19 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         post.on("vote", function(direction) {
             return jventService.postVote(contextEvent.event.url, this.url, direction);
         });
+        if(post.media && post.media.media) {
+            post.media.media = new Media(post.media.media);
+        }
         contextPost.post = post;
         lastUpdate = Date.now();
         contextPost.loadedPost = true;
     };
-    var resolveMedia = function() {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            mediaService(contextPost.post.media).getMediaBlob()
-        })
-    }
+    // var resolveMedia = function() {
+    //     return $q((resolve, reject) => {resolve()})
+    //     .then(function() {
+    //         mediaService(contextPost.post.media).getMediaBlob()
+    //     })
+    // }
     var requiresUpdate = function(postURL) {
         return(postURL!=contextPost.post.url||!fresh());
     }
@@ -1102,7 +1106,7 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         .then(function(post) {
             var response = {post: post};
             if(!post.media || !post.media.media) return response;
-            response.mediaPromise = mediaService(post.media.media).getMediaBlob();
+            response.mediaPromise = post.media.media.getAsBlob();
             return response;
         });
     };
