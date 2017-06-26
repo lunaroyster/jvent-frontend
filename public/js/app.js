@@ -6,7 +6,7 @@
 // ["$scope","$rootScope", "$routeParams", "userService","newObjectService","contextService","listService","skeletal service","angular library service"]
 // ["other", "user", "commentURL", "postURL", "eventURL", "comment", "post", "event"]
 //  }
-var app = angular.module("jvent", ['ngRoute']);
+var app = angular.module("jvent", ['ngRoute', 'ngRaven']);
 
 app.config(['$routeProvider', function($routeProvider) {
     $routeProvider
