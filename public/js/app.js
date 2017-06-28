@@ -544,6 +544,74 @@ app.service('mediaService', function($http) {
     }
 });
 
+app.service('Media', function($http, $q) {
+    var Media = class {
+        constructor(media) {
+            this._events = {};
+            this._time = {};
+            this._ = media;
+            this._time.fetch = Date.now();
+            this.invoke("load");
+        }
+        
+        // Event handling
+        on(name, handler) {
+            if(this._events.hasOwnProperty(name)) {
+                this._events[name].push(handler);
+            }
+            else {
+                this._events[name] = [handler];
+            }
+        }
+        invoke(name, args) {
+            var res = [];
+            if(!this._events.hasOwnProperty(name)) return;
+            if (!args || !args.length) args = [];
+            for (var fn of this._events[name]) {
+                res.push(fn.apply(this, args));
+            }
+            return res;
+        }
+        
+        getAsBlob() {
+            var _this = this;
+            return $q((resolve, reject) => {resolve()})
+            .then(function() {
+                if(_this._blobURL) return;
+                var config = {
+                    method: 'GET',
+                    url: _this.link,
+                    responseType: 'blob',
+                    headers: {
+                       'Authorization': undefined
+                     },
+                };
+                return $http(config)
+                .then(Media.blobifyResponseData)
+                .then(function(blobURL) {
+                    _this._blobURL = blobURL;
+                    _this.invoke("blobURL-change", [blobURL]);
+                });
+            })
+            .then(function() {
+                return _this._blobURL;
+            });
+        }
+        
+        static blobifyResponseData(response) {
+            var blob = new Blob([response.data], {type: response.headers('content-type')})
+            var blobURL = URL.createObjectURL(blob);
+            return blobURL;
+        }
+        
+        get link() {
+            return this._.link;
+        }
+        
+    };
+    return Media;
+});
+
 app.service('Event', function(jventService, $q) {
     var Event = class {
         constructor(event) {
@@ -601,6 +669,10 @@ app.service('Event', function(jventService, $q) {
         }
         get backgroundImage() {
             return this._.backgroundImage;
+        }
+        
+        set backgroundImage(value) {
+            this._.backgroundImage = value;
         }
 
         join() {
@@ -699,7 +771,7 @@ app.service('Post', function(jventService, $q) {
 // app.service('Event', function(Post) {})
 
 //  List Providers {
-app.factory('eventListService', function(jventService, $q) {
+app.factory('eventListService', function(jventService, Event, Media, $q) {
     var eventListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -714,23 +786,27 @@ app.factory('eventListService', function(jventService, $q) {
         //TODO: compare eventListService.query and lastQuery
         return false;
     };
-    var setEventList = function(eventList) {
-        eventListService.eventList = eventList;
+    var setEventList = function(rawEventList) {
+        var newEventList = Event.deserializeArray(rawEventList);
+        for (var event of newEventList) {
+            event.backgroundImage = new Media(event.backgroundImage);
+        }
+        eventListService.eventList = newEventList;
         lastUpdate = Date.now();
         eventListService.loadedEventList = true;
     };
     eventListService.getEventList = function() {
-        return $q(function(resolve, reject) {
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
             if(queryChange() || !fresh()) {
                 return jventService.getEvents()
-                .then(function(eventList) {
-                    setEventList(eventList);
-                    return resolve(eventList);
+                .then(function(rawEventList) {
+                    setEventList(rawEventList);
                 });
             }
-            else {
-                return resolve(eventListService.eventList);
-            }
+        })
+        .then(function() {
+            return(eventListService.eventList);
         });
     };
     return eventListService;
@@ -989,7 +1065,7 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, Post, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, Media, Post, jventService, $q) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -1002,16 +1078,19 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         post.on("vote", function(direction) {
             return jventService.postVote(contextEvent.event.url, this.url, direction);
         });
+        if(post.media && post.media.media) {
+            post.media.media = new Media(post.media.media);
+        }
         contextPost.post = post;
         lastUpdate = Date.now();
         contextPost.loadedPost = true;
     };
-    var resolveMedia = function() {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            mediaService(contextPost.post.media).getMediaBlob()
-        })
-    }
+    // var resolveMedia = function() {
+    //     return $q((resolve, reject) => {resolve()})
+    //     .then(function() {
+    //         mediaService(contextPost.post.media).getMediaBlob()
+    //     })
+    // }
     var requiresUpdate = function(postURL) {
         return(postURL!=contextPost.post.url||!fresh());
     }
@@ -1035,7 +1114,7 @@ app.factory('contextPost', function(contextEvent, mediaService, Post, jventServi
         .then(function(post) {
             var response = {post: post};
             if(!post.media || !post.media.media) return response;
-            response.mediaPromise = mediaService(post.media.media).getMediaBlob();
+            response.mediaPromise = post.media.media.getAsBlob();
             return response;
         });
     };
@@ -1209,10 +1288,10 @@ app.controller('homeController', function($scope, $rootScope, userService, event
 //Event
 app.controller('eventListCtrl', function($scope, eventListService, navService, mediaService, $q) {
     $scope.loadEventMedia = function(event) {
-        return mediaService(event.backgroundImage).getMediaBlob()
+        return event.backgroundImage.getAsBlob()
         .then(function(blobURL) {
             event.image = blobURL;
-        })
+        });
     }
     $scope.loadEvents = function(eventList) {
         //  TODO: Super temporary. Get rid of this crap.
