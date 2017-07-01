@@ -253,6 +253,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj.authed = false;
     obj.authStore = null;
     obj.timeCreated = Date.now();
+    obj._events = {};
     var logoutCallbacks = [];
     var getAuthStore = function() {
         var storage = [window.localStorage, window.sessionStorage];
@@ -312,6 +313,23 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
             callbackArray[fn]();
         }
     };
+    var on = function(name, handler) {
+        if(obj._events.hasOwnProperty(name)) {
+            obj._events[name].push(handler);
+        }
+        else {
+            obj._events[name] = [handler];
+        }
+    }
+    var invoke = function(name, args) {
+        var res = [];
+        if(!obj._events.hasOwnProperty(name)) return;
+        if (!args || !args.length) args = [];
+        for (var fn of obj._events[name]) {
+            res.push(fn.apply(this, args));
+        }
+        return res;
+    }
 
     obj.isAuthed = function() {
         return(obj.authed);
@@ -380,6 +398,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         if(password == repassword){return(true);}
         else {return(false);}
     };
+    obj.on = on;
     loadUser();
     return(obj);
 });
