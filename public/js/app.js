@@ -553,7 +553,7 @@ app.service('Media', function($http, $q) {
             this._time.fetch = Date.now();
             this.invoke("load");
         }
-        
+
         // Event handling
         on(name, handler) {
             if(this._events.hasOwnProperty(name)) {
@@ -572,7 +572,7 @@ app.service('Media', function($http, $q) {
             }
             return res;
         }
-        
+
         getAsBlob() {
             var _this = this;
             return $q((resolve, reject) => {resolve()})
@@ -597,17 +597,17 @@ app.service('Media', function($http, $q) {
                 return _this._blobURL;
             });
         }
-        
+
         static blobifyResponseData(response) {
             var blob = new Blob([response.data], {type: response.headers('content-type')})
             var blobURL = URL.createObjectURL(blob);
             return blobURL;
         }
-        
+
         get link() {
             return this._.link;
         }
-        
+
     };
     return Media;
 });
@@ -670,9 +670,15 @@ app.service('Event', function(jventService, $q) {
         get backgroundImage() {
             return this._.backgroundImage;
         }
+        get eventMembership() {
+            return this._eventMembership;
+        }
         
         set backgroundImage(value) {
             this._.backgroundImage = value;
+        }
+        set eventMembership(value) {
+            this._eventMembership = value;
         }
 
         join() {
@@ -767,6 +773,47 @@ app.service('Post', function(jventService, $q) {
     }
     return Post;
 });
+
+app.service('EventMembership', function(jventService, $q) {
+    var EventMembership = class {
+        constructor(eventMembership) {
+            //initialize post
+            this._events = {};
+            this._time = {};
+            this._ = eventMembership; //TODO: rename to _eventMembership?
+            this._time.fetch = Date.now();
+            this.invoke("load");
+        }
+
+        getRoles() {
+            return this._.roles;
+        }
+        hasRole(role) {
+            return(this._.roles.indexOf(role)!=-1);
+        }
+
+        // Event handling
+        on(name, handler) {
+            if(this._events.hasOwnProperty(name)) {
+                this._events[name].push(handler);
+            }
+            else {
+                this._events[name] = [handler];
+            }
+        }
+        invoke(name, args) {
+            var res = [];
+            if(!this._events.hasOwnProperty(name)) return;
+            if (!args || !args.length) args = [];
+            for (var fn of this._events[name]) {
+                res.push(fn.apply(this, args));
+            }
+            return res;
+        }
+
+    }
+    return EventMembership;
+})
 
 // app.service('Event', function(Post) {})
 
