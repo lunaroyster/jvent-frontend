@@ -308,11 +308,6 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
             console.log("Loaded User");
         }
     };
-    var launchCallbacks = function(callbackArray) {
-        for (var fn in callbackArray) {
-            callbackArray[fn]();
-        }
-    };
     var on = function(name, handler) {
         if(obj._events.hasOwnProperty(name)) {
             obj._events[name].push(handler);
@@ -355,11 +350,8 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         deleteAuthHeader();
         $rootScope.authed = false;
         //Delete user data in root scope
-        launchCallbacks(logoutCallbacks);
+        invoke("logout");
         obj.authed = false;
-    };
-    obj.onLogout = function(callback) {
-        logoutCallbacks.push(callback);
     };
     obj.register = function(user) {
         var req = {
@@ -837,7 +829,7 @@ app.service('EventMembership', function(jventService, $q) {
 // app.service('Event', function(Post) {})
 
 //  List Providers {
-app.factory('eventListService', function(jventService, Event, Media, $q) {
+app.factory('eventListService', function(jventService, userService, Event, Media, $q) {
     var eventListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -856,7 +848,13 @@ app.factory('eventListService', function(jventService, Event, Media, $q) {
         var newEventList = Event.deserializeArray(rawEventList);
         for (var event of newEventList) {
             event.backgroundImage = new Media(event.backgroundImage);
+            //TODO: Set eventMembership for event
         }
+        userService.on("logout", function() {
+            for (var event of newEventList) {
+                event.eventMembership = null;
+            }
+        })
         eventListService.eventList = newEventList;
         lastUpdate = Date.now();
         eventListService.loadedEventList = true;
@@ -988,7 +986,7 @@ app.factory('eventMembershipService', function(userService, jventService, $q) {
             }
         });
     };
-    userService.onLogout(function() {
+    userService.on("logout", function() {
         eventMembershipService.eventLists = {};
         eventMembershipService.roles = [];
     });
@@ -1085,7 +1083,7 @@ app.factory('postListService', function(Post, contextEvent, jventService, $q) {
 //  }
 
 //  Context Providers {
-app.factory('contextEvent', function(eventMembershipService, Event, jventService, $q) {
+app.factory('contextEvent', function(eventMembershipService, userService, Event, jventService, $q) {
     var contextEvent = {};
     contextEvent.event = {};
     contextEvent.cacheTime = 60000;
@@ -1098,6 +1096,10 @@ app.factory('contextEvent', function(eventMembershipService, Event, jventService
         event.on("join", function() {
             console.log("Joining event");
             return jventService.joinEvent(event.url);
+        });
+        //TODO: Set eventMembership for event
+        userService.on("logout", function() {
+            event.eventMembership = null;
         });
         contextEvent.event = event;
         lastUpdate = Date.now();
