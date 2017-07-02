@@ -324,6 +324,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
             setAuthHeader(obj.authStore.token);
             $rootScope.authed = true;
             //Update user data in root scope
+            obj.invoke("login");
             console.log("Loaded User");
         }
     };
@@ -861,7 +862,7 @@ app.factory('userMembershipService', function(userService, contextEvent, jventSe
     return userMembershipService;
 });
 
-app.factory('eventMembershipService', function(userService, jventService, $q) {
+/*app.factory('eventMembershipService', function(userService, jventService, $q) {
     var eventMembershipService = {};
     eventMembershipService.eventLists = {};
     eventMembershipService.cacheTime = 60000;
@@ -899,8 +900,8 @@ app.factory('eventMembershipService', function(userService, jventService, $q) {
     };
     var isEventInList = function(list, eventURL) {
         //TODO: Better implementation
-        for(var item in list) {
-            if(list[item].event.url==eventURL) {
+        for(var eventMembership of list) {
+            if(eventMembership._eventMembership.event.url==eventURL) {
                 return true;
             }
         }
@@ -925,7 +926,41 @@ app.factory('eventMembershipService', function(userService, jventService, $q) {
         eventMembershipService.roles = [];
     });
     return eventMembershipService;
-});
+});*/
+
+app.factory('eventMembershipService', function(jventService, userService, EventMembership, $q) {
+    var eventMembershipService = {};
+    eventMembershipService.eventMemberships = {};
+    eventMembershipService.cacheTime = 60000;
+    eventMembershipService.getMembership = function(event) {
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            var eventMembership = eventMembershipService.eventMemberships[event.url];
+            if(eventMembership && !updateRequired(eventMembership)) return eventMembership;
+            return fetchMembership(event);
+        })
+        .then(function(eventMembership) {
+            eventMembershipService.eventMemberships[event.url] = eventMembership;
+            return eventMembership;
+        });
+    };
+    eventMembershipService.getEventMembership = function(event) {
+        //Returns corresponding eventMembership if it exists, or nothing.
+        var eventMembership = eventMembershipService.eventMemberships[event.url];
+        if(eventMembership) return eventMembership;
+    }
+    console.log(userService);
+    userService.on("login", function() {
+        //TODO: Fetch and store user's eventMemberships
+        console.log("asdf");
+    });
+    userService.on("logout", function() {
+        //Delete user's eventMemberships
+        eventMembershipService.eventMemberships = {};
+    });
+
+    return eventMembershipService;
+})
 
 app.factory('userListService', function(contextEvent, jventService, $q) {
     var userListService = {};
@@ -1031,7 +1066,7 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
             console.log("Joining event");
             return jventService.joinEvent(event.url);
         });
-//         event.eventMembership = eventMembershipService.getEventMembership(event);
+        // event.eventMembership = eventMembershipService.getEventMembership(event);
         userService.on("logout", function() {
             event.eventMembership = null;
         });
@@ -1045,7 +1080,8 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     contextEvent.getEvent = function(eventURL) {
         return $q((resolve, reject) => {resolve()})
         .then(function() {
-            return eventMembershipService.isEventRole("moderator", eventURL);
+            if(!contextEvent.event.eventMembership) return false;
+            return contextEvent.event.eventMembership.hasRole("moderator");
         })
         .then(function(result) {
             if(requiresUpdate(eventURL)) {
@@ -1254,7 +1290,7 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
 
 //  Controllers {
 
-app.controller('homeController', function($scope, $rootScope, userService, eventMembershipService, navService, $location) {
+app.controller('homeController', function($scope, $rootScope, eventMembershipService, userService, navService, $location) {
     $scope.homeClick = function() {
         navService.home();
     };
