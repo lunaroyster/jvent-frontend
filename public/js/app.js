@@ -757,6 +757,9 @@ app.service('EventMembership', function(jventService, $q) {
             return(this._.roles.indexOf(role)!=-1);
         }
 
+        get eventURL() {
+            return this._.event.url;
+        }
     }
     return EventMembership;
 })
@@ -932,22 +935,54 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
     var eventMembershipService = {};
     eventMembershipService.eventMemberships = {};
     eventMembershipService.cacheTime = 60000;
-    eventMembershipService.getMembership = function(event) {
+    eventMembershipService.initialFetch = false;
+    eventMembershipService.fetchMembership = function(event) {
         return $q((resolve, reject) => {resolve()})
         .then(function() {
-            var eventMembership = eventMembershipService.eventMemberships[event.url];
-            if(eventMembership && !updateRequired(eventMembership)) return eventMembership;
-            return fetchMembership(event);
+            //Fetch
         })
-        .then(function(eventMembership) {
-            eventMembershipService.eventMemberships[event.url] = eventMembership;
-            return eventMembership;
+        .then(function(rawEventMembership) {
+            //Deserialize
         });
     };
+    eventMembershipService.fetchMemberships = function() {
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            //Fetch
+        })
+        .then(function(rawEventMemberships) {
+            //Deserialize
+        })
+    }
     eventMembershipService.getEventMembership = function(event) {
-        //Returns corresponding eventMembership if it exists, or nothing.
-        var eventMembership = eventMembershipService.eventMemberships[event.url];
-        if(eventMembership) return eventMembership;
+        //Returns corresponding eventMembership, or nothing.
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            if(!userService.authed) return null;
+            var eventMembership = eventMembershipService.eventMemberships[event.url];
+            if(eventMembership) return eventMembership;
+            return fetchMembership(event)
+            .then(function(fetchedMembership) {
+                eventMembershipService.eventMemberships[event.url] = fetchedMembership;
+                return fetchedMembership;
+            });
+        });
+    };
+    eventMembershipService.getEventMemberships = function() {
+        //Returns all eventMemberships
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            if(!userService.authed) return null;
+            if(eventMembershipService.initialFetch) return eventMembershipService.eventMemberships;
+            return fetchMemberships()
+            .then(function(fetchedMemberships) {
+                for (var fetchedMembership of fetchedMemberships) {
+                    eventMembershipService.eventMemberships[fetchedMembership.eventURL] = fetchedMembership;
+                }
+                eventMembershipService.initialFetch = true;
+                return eventMembershipService.eventMemberships;
+            });
+        });
     }
     console.log(userService);
     userService.on("login", function() {
