@@ -511,7 +511,14 @@ app.service('jventService', function(urlService, $http, $q) {
             return response.data;
         });
     };
-    this.getEventMembershipList = function(role) {
+    this.getEventMemberships = function() {
+        var url = urlService.userEvents();
+        return $http.get(url)
+        .then(function(response) {
+            return response.data;
+        });
+    };
+    this.getEventMembershipsByRole = function(role) {
         var url = urlService.userEventsRole(role);
         return $http.get(url)
         .then(function(response) {
@@ -745,7 +752,7 @@ app.service('EventMembership', function(jventService, $q) {
             this.on = on.bind(this)
             this.invoke = invoke.bind(this)
             this._time = {};
-            this._ = eventMembership; //TODO: rename to _eventMembership?
+            this._ = eventMembership._eventMembership; //TODO: rename to _eventMembership?
             this._time.fetch = Date.now();
             this.invoke("load");
         }
@@ -760,6 +767,15 @@ app.service('EventMembership', function(jventService, $q) {
         get eventURL() {
             return this._.event.url;
         }
+
+        static deserializeArray(rawEventMembershipArray) {
+            var EventMembershipObjectArray = [];
+            for (var eventMembership of rawEventMembershipArray) {
+                EventMembershipObjectArray.push(new EventMembership(eventMembership));
+            }
+            return EventMembershipObjectArray;
+        }
+
     }
     return EventMembership;
 })
@@ -939,19 +955,19 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
     eventMembershipService.fetchMembership = function(event) {
         return $q((resolve, reject) => {resolve()})
         .then(function() {
-            //Fetch
+            //TODO: Fetch
         })
         .then(function(rawEventMembership) {
-            //Deserialize
+            //TODO: Deserialize
         });
     };
     eventMembershipService.fetchMemberships = function() {
         return $q((resolve, reject) => {resolve()})
         .then(function() {
-            //Fetch
+            return jventService.getEventMemberships()
         })
         .then(function(rawEventMemberships) {
-            //Deserialize
+            return EventMembership.deserializeArray(rawEventMemberships);
         })
     }
     eventMembershipService.getEventMembership = function(event) {
