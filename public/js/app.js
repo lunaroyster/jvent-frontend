@@ -6,6 +6,25 @@
 // ["$scope","$rootScope", "$routeParams", "userService","newObjectService","contextService","listService","skeletal service","angular library service"]
 // ["other", "user", "commentURL", "postURL", "eventURL", "comment", "post", "event"]
 //  }
+
+var on = function(name, handler) {
+    if(this._events.hasOwnProperty(name)) {
+        this._events[name].push(handler);
+    }
+    else {
+        this._events[name] = [handler];
+    }
+}
+var invoke = function(name, args) {
+    var res = [];
+    if(!this._events.hasOwnProperty(name)) return;
+    if (!args || !args.length) args = [];
+    for (var fn of this._events[name]) {
+        res.push(fn.apply(this, args));
+    }
+    return res;
+}
+
 var app = angular.module("jvent", ['ngRoute', 'ngRaven']);
 
 app.config(['$routeProvider', function($routeProvider) {
@@ -308,28 +327,12 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
             console.log("Loaded User");
         }
     };
-    var on = function(name, handler) {
-        if(obj._events.hasOwnProperty(name)) {
-            obj._events[name].push(handler);
-        }
-        else {
-            obj._events[name] = [handler];
-        }
-    }
-    var invoke = function(name, args) {
-        var res = [];
-        if(!obj._events.hasOwnProperty(name)) return;
-        if (!args || !args.length) args = [];
-        for (var fn of obj._events[name]) {
-            res.push(fn.apply(this, args));
-        }
-        return res;
-    }
+    obj.invoke = invoke.bind(obj);
+    obj.on = on.bind(obj);
 
     obj.isAuthed = function() {
         return(obj.authed);
     };
-
     obj.login = function(creds, options) {
         return getTokenFromServer(creds)
         .then(function(token) {
@@ -350,7 +353,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         deleteAuthHeader();
         $rootScope.authed = false;
         //Delete user data in root scope
-        invoke("logout");
+        obj.invoke("logout");
         obj.authed = false;
     };
     obj.register = function(user) {
@@ -390,7 +393,6 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         if(password == repassword){return(true);}
         else {return(false);}
     };
-    obj.on = on;
     loadUser();
     return(obj);
 });
@@ -559,29 +561,12 @@ app.service('Media', function($http, $q) {
     var Media = class {
         constructor(media) {
             this._events = {};
+            this.on = on.bind(this)
+            this.invoke = invoke.bind(this)
             this._time = {};
             this._ = media;
             this._time.fetch = Date.now();
             this.invoke("load");
-        }
-
-        // Event handling
-        on(name, handler) {
-            if(this._events.hasOwnProperty(name)) {
-                this._events[name].push(handler);
-            }
-            else {
-                this._events[name] = [handler];
-            }
-        }
-        invoke(name, args) {
-            var res = [];
-            if(!this._events.hasOwnProperty(name)) return;
-            if (!args || !args.length) args = [];
-            for (var fn of this._events[name]) {
-                res.push(fn.apply(this, args));
-            }
-            return res;
         }
 
         getAsBlob() {
@@ -627,29 +612,12 @@ app.service('Event', function(jventService, $q) {
     var Event = class {
         constructor(event) {
             this._events = {};
+            this.on = on.bind(this)
+            this.invoke = invoke.bind(this)
             this._time = {};
             this._ = event;
             this._time.fetch = Date.now();
             this.invoke("load");
-        }
-
-        // Event handling
-        on(name, handler) {
-            if(this._events.hasOwnProperty(name)) {
-                this._events[name].push(handler);
-            }
-            else {
-                this._events[name] = [handler];
-            }
-        }
-        invoke(name, args) {
-            var res = [];
-            if(!this._events.hasOwnProperty(name)) return;
-            if (!args || !args.length) args = [];
-            for (var fn of this._events[name]) {
-                res.push(fn.apply(this, args));
-            }
-            return res;
         }
 
         static deserializeArray(rawEventArray) {
@@ -684,7 +652,7 @@ app.service('Event', function(jventService, $q) {
         get eventMembership() {
             return this._eventMembership;
         }
-        
+
         set backgroundImage(value) {
             this._.backgroundImage = value;
         }
@@ -706,29 +674,12 @@ app.service('Post', function(jventService, $q) {
         constructor(post) {
             //initialize post
             this._events = {};
+            this.on = on.bind(this)
+            this.invoke = invoke.bind(this)
             this._time = {};
             this._ = post; //TODO: rename to _post?
             this._time.fetch = Date.now();
             this.invoke("load");
-        }
-
-        // Event handling
-        on(name, handler) {
-            if(this._events.hasOwnProperty(name)) {
-                this._events[name].push(handler);
-            }
-            else {
-                this._events[name] = [handler];
-            }
-        }
-        invoke(name, args) {
-            var res = [];
-            if(!this._events.hasOwnProperty(name)) return;
-            if (!args || !args.length) args = [];
-            for (var fn of this._events[name]) {
-                res.push(fn.apply(this, args));
-            }
-            return res;
         }
 
         static fromPostURL(postURL, eventURL) {
@@ -790,6 +741,8 @@ app.service('EventMembership', function(jventService, $q) {
         constructor(eventMembership) {
             //initialize post
             this._events = {};
+            this.on = on.bind(this)
+            this.invoke = invoke.bind(this)
             this._time = {};
             this._ = eventMembership; //TODO: rename to _eventMembership?
             this._time.fetch = Date.now();
@@ -801,25 +754,6 @@ app.service('EventMembership', function(jventService, $q) {
         }
         hasRole(role) {
             return(this._.roles.indexOf(role)!=-1);
-        }
-
-        // Event handling
-        on(name, handler) {
-            if(this._events.hasOwnProperty(name)) {
-                this._events[name].push(handler);
-            }
-            else {
-                this._events[name] = [handler];
-            }
-        }
-        invoke(name, args) {
-            var res = [];
-            if(!this._events.hasOwnProperty(name)) return;
-            if (!args || !args.length) args = [];
-            for (var fn of this._events[name]) {
-                res.push(fn.apply(this, args));
-            }
-            return res;
         }
 
     }
@@ -1097,7 +1031,7 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
             console.log("Joining event");
             return jventService.joinEvent(event.url);
         });
-        //TODO: Set eventMembership for event
+//         event.eventMembership = eventMembershipService.getEventMembership(event);
         userService.on("logout", function() {
             event.eventMembership = null;
         });
