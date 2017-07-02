@@ -783,7 +783,7 @@ app.service('EventMembership', function(jventService, $q) {
 // app.service('Event', function(Post) {})
 
 //  List Providers {
-app.factory('eventListService', function(jventService, userService, Event, Media, $q) {
+app.factory('eventListService', function(jventService, eventMembershipService, userService, Event, Media, $q) {
     var eventListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -803,6 +803,10 @@ app.factory('eventListService', function(jventService, userService, Event, Media
         for (var event of newEventList) {
             event.backgroundImage = new Media(event.backgroundImage);
             //TODO: Set eventMembership for event
+            eventMembershipService.getEventMembership(event)
+            .then(function(eventMembership) {
+                event.eventMembership = eventMembership;
+            })
         }
         userService.on("logout", function() {
             for (var event of newEventList) {
@@ -990,7 +994,7 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
         .then(function() {
             if(!userService.authed) return null;
             if(eventMembershipService.initialFetch) return eventMembershipService.eventMemberships;
-            return fetchMemberships()
+            return eventMembershipService.fetchMemberships()
             .then(function(fetchedMemberships) {
                 for (var fetchedMembership of fetchedMemberships) {
                     eventMembershipService.eventMemberships[fetchedMembership.eventURL] = fetchedMembership;
@@ -1010,6 +1014,7 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
         eventMembershipService.eventMemberships = {};
     });
 
+    eventMembershipService.getEventMemberships();
     return eventMembershipService;
 })
 
@@ -1117,7 +1122,10 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
             console.log("Joining event");
             return jventService.joinEvent(event.url);
         });
-        // event.eventMembership = eventMembershipService.getEventMembership(event);
+        eventMembershipService.getEventMembership(event)
+        .then(function(eventMembership) {
+            event.eventMembership = eventMembership;
+        });
         userService.on("logout", function() {
             event.eventMembership = null;
         });
