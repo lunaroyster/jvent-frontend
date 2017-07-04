@@ -26,6 +26,7 @@ var invoke = function(name, args) {
 }
 
 var app = angular.module("jvent", ['ngRoute', 'ngRaven']);
+// var app = angular.module("jvent", ['ngRoute']);
 
 app.config(['$routeProvider', function($routeProvider) {
     $routeProvider
@@ -968,12 +969,12 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
     eventMembershipService.fetchMemberships = function() {
         return $q((resolve, reject) => {resolve()})
         .then(function() {
-            return jventService.getEventMemberships()
+            return jventService.getEventMemberships();
         })
         .then(function(rawEventMemberships) {
             return EventMembership.deserializeArray(rawEventMemberships);
-        })
-    }
+        });
+    };
     eventMembershipService.getEventMembership = function(event) {
         //Returns corresponding eventMembership, or nothing.
         return $q((resolve, reject) => {resolve()})
@@ -981,7 +982,7 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
             if(!userService.authed) return null;
             var eventMembership = eventMembershipService.eventMemberships[event.url];
             if(eventMembership) return eventMembership;
-            return fetchMembership(event)
+            return eventMembershipService.fetchMembership(event)
             .then(function(fetchedMembership) {
                 eventMembershipService.eventMemberships[event.url] = fetchedMembership;
                 return fetchedMembership;
@@ -1118,20 +1119,24 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
         return (Date.now() - lastUpdate) < contextEvent.cacheTime;
     };
     var setEvent = function(event) {
-        event.on("join", function() {
-            console.log("Joining event");
-            return jventService.joinEvent(event.url);
-        });
-        eventMembershipService.getEventMembership(event)
-        .then(function(eventMembership) {
-            event.eventMembership = eventMembership;
-        });
-        userService.on("logout", function() {
-            event.eventMembership = null;
-        });
-        contextEvent.event = event;
-        lastUpdate = Date.now();
-        contextEvent.loadedEvent = true;
+        return $q((resolve, reject) => {resolve()})
+        .then(function() {
+            event.on("join", function() {
+                console.log("Joining event");
+                return jventService.joinEvent(event.url);
+            });
+            userService.on("logout", function() {
+                event.eventMembership = null;
+            });
+            return eventMembershipService.getEventMembership(event)
+            .then(function(eventMembership) {
+                event.eventMembership = eventMembership;
+                contextEvent.event = event;
+                lastUpdate = Date.now();
+                contextEvent.loadedEvent = true;
+                return event;
+            });
+        })
     };
     var requiresUpdate = function(eventURL) {
         return(eventURL!=contextEvent.event.url||!fresh());
@@ -1149,8 +1154,7 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
                     return new Event(rawEvent);
                 })
                 .then(function(event) {
-                    setEvent(event);
-                    return event;
+                    return setEvent(event);
                 });
             }
             return contextEvent.event;
