@@ -170,7 +170,7 @@ app.service('urlService', function() {
         return(this.user() + 'events/');
     };
     this.userEventsRole = function(role) {
-        return(this.userEvents() + role + '/');
+        return(this.userEvents() + 'role/' + role + '/');
     };
     this.userSignUp = function() {
         return(this.user() + 'signup/');
@@ -802,7 +802,7 @@ app.factory('eventListService', function(jventService, eventMembershipService, u
     var setEventList = function(rawEventList) {
         var newEventList = Event.deserializeArray(rawEventList);
         for (var event of newEventList) {
-            event.backgroundImage = new Media(event.backgroundImage);
+            if(event.backgroundImage) event.backgroundImage = new Media(event.backgroundImage);
             //TODO: Set eventMembership for event
             eventMembershipService.getEventMembership(event)
             .then(function(eventMembership) {
@@ -1005,7 +1005,10 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
             });
         });
     }
-    console.log(userService);
+    eventMembershipService.retrieveEventMembership = function(eventURL) {
+        return eventMembershipService.eventMemberships[eventURL];
+    }
+
     userService.on("login", function() {
         //TODO: Fetch and store user's eventMemberships
         console.log("asdf");
@@ -1144,8 +1147,9 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     contextEvent.getEvent = function(eventURL) {
         return $q((resolve, reject) => {resolve()})
         .then(function() {
-            if(!contextEvent.event.eventMembership) return false;
-            return contextEvent.event.eventMembership.hasRole("moderator");
+            var eventMembership = eventMembershipService.retrieveEventMembership(eventURL);
+            if(!eventMembership) return false;
+            return eventMembership.hasRole("moderator");
         })
         .then(function(result) {
             if(requiresUpdate(eventURL)) {
