@@ -774,9 +774,12 @@ app.service('EventMembership', function(jventService, $q) {
             return this._.roles;
         }
         hasRole(role) {
+            if(!this.isFetched()) return false;
             return(this._.roles.indexOf(role)!=-1);
         }
-
+        isFetched() {
+            return(!!this._);
+        }
         get eventURL() {
             return this._.event.url;
         }
@@ -974,10 +977,10 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
     eventMembershipService.fetchMembership = function(event) {
         return $q((resolve, reject) => {resolve()})
         .then(function() {
-            //TODO: Fetch
+            return jventService.getEventMembershipByEventID(event.id)
         })
         .then(function(rawEventMembership) {
-            //TODO: Deserialize
+            return EventMembership.deserializeObject(rawEventMembership);
         });
     };
     eventMembershipService.fetchMemberships = function() {
@@ -995,7 +998,7 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
         .then(function() {
             if(!userService.authed) return null;
             var eventMembership = eventMembershipService.eventMemberships[event.url];
-            if(eventMembership) return eventMembership;
+            if(eventMembership && eventMembership.isFetched()) return eventMembership;
             return eventMembershipService.fetchMembership(event)
             .then(function(fetchedMembership) {
                 eventMembershipService.eventMemberships[event.url] = fetchedMembership;
