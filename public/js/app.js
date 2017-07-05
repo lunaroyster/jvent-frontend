@@ -169,6 +169,9 @@ app.service('urlService', function() {
     this.userEvents = function() {
         return(this.user() + 'events/');
     };
+    this.userEventID = function(eventID) {
+        return(this.userEvents() + eventID + '/');
+    }
     this.userEventsRole = function(role) {
         return(this.userEvents() + 'role/' + role + '/');
     };
@@ -519,6 +522,13 @@ app.service('jventService', function(urlService, $http, $q) {
             return response.data;
         });
     };
+    this.getEventMembershipByEventID = function(eventID) {
+        var url = urlService.userEventID(eventID);
+        return $http.get(url)
+        .then(function(response) {
+            return response.data;
+        });
+    }
     this.getEventMembershipsByRole = function(role) {
         var url = urlService.userEventsRole(role);
         return $http.get(url)
@@ -637,6 +647,9 @@ app.service('Event', function(jventService, $q) {
             return EventObjectArray;
         }
 
+        get id() {
+            return this._._id
+        }
         get url() {
             return this._.url;
         }
@@ -661,7 +674,6 @@ app.service('Event', function(jventService, $q) {
         get eventMembership() {
             return this._eventMembership;
         }
-
         set backgroundImage(value) {
             this._.backgroundImage = value;
         }
@@ -776,7 +788,9 @@ app.service('EventMembership', function(jventService, $q) {
             }
             return EventMembershipObjectArray;
         }
-
+        static deserializeObject(rawEventMembershipObject) {
+            return new EventMembership(rawEventMembershipObject);
+        }
     }
     return EventMembership;
 })
