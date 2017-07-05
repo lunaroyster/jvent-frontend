@@ -341,7 +341,28 @@ nav {
 
 }
 #loginView {
-
+    display: flex;
+    justify-content: center;
+    .loginForm {
+        width: 33%;
+        .input {
+            .staySigned {
+                //HACK
+                margin: 0;
+                height: 3em;
+            }
+        }
+        .controls {
+            width: 100%;
+            display: inline-flex;
+            .input-field {
+                flex-grow: 1;
+                button {
+                    width: 100%;
+                }
+            }
+        }
+    }
 }
 #logoutView {
 
