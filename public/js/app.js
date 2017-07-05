@@ -1497,6 +1497,23 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
     $scope.view = function() {
         navService.posts(contextEvent.event.url);
     };
+
+    var status = {
+        joined: {
+            text: "Joined",
+            icon: "check",
+            status: true
+        },
+        unjoined: {
+            text: "Join",
+            icon: "add",
+            status: false
+        }
+    };
+    $scope.joinedStatus = function() {
+        if($scope.event.eventMembership && $scope.event.eventMembership.hasRole("attendee")) return status.joined;
+        return status.unjoined;
+    };
 });
 
 app.controller('userListCtrl', function($scope, $routeParams, userMembershipService) {
@@ -1702,11 +1719,11 @@ app.controller('loginCtrl', function($scope, userService, navService) {
     $scope.signInPending = false;
     $scope.signIn = function() {
         if($scope.email && $scope.password) {
+            $scope.signInPending = true;
             var creds = {
                 email: $scope.email,
                 password: $scope.password
             };
-            $scope.signInPending = true;
             userService.login(creds, {remainSignedIn:$scope.remainSignedIn})
             .then(function(success) {
                 if (success) {
