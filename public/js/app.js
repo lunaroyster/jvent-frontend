@@ -73,6 +73,12 @@ app.config(['$routeProvider', function($routeProvider) {
         templateUrl : './views/post/page.html'
     })
 
+    .when('/event/:eventURL/debug', {
+        controller  : 'debugCtrl',
+        controllerAs: 'debugView',
+        templateUrl : './views/event/debug.html'
+    })
+
     .when('/event/:eventURL/users', {
         controller  : 'userListCtrl',
         controllerAs: 'userListView',
@@ -1550,6 +1556,23 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
         });
     };
 });
+
+app.controller('debugCtrl', function($scope, $routeParams, contextEvent) {
+    $scope.loaded = false;
+    $scope.loadEvent = function(event) {
+        $scope.event = event;
+        console.log($scope.event)
+        $scope.loaded = true;
+    };
+    $scope.refresh = function() {
+        return contextEvent.getEvent($routeParams.eventURL)
+        .then($scope.loadEvent)
+        .catch(function(error) {
+            Materialize.toast(error.status + ' ' + error.statusText, 4000);
+        });
+    };
+    $scope.refresh();
+})
 
 //Post
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {
