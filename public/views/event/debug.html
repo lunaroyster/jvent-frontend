@@ -1,3 +1,10 @@
 <div id="debugView">
     <div class="eventJSON" ng-bind="event"></div>
+    <div class="row control">
+        <div class="input-field col s6">
+            <input id="name" type="text" ng-model="backgroundLink" length="144" required></input>
+            <label for="name">Event Background URL</label>
+        </div>
+        <button class="col s6 btn waves-effect waves-light" ng-click="setEventBackground()">Set Event background</button>
+    </div>
 </div>
