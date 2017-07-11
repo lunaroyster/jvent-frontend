@@ -73,6 +73,12 @@ app.config(['$routeProvider', function($routeProvider) {
         templateUrl : './views/post/page.html'
     })
 
+    .when('/event/:eventURL/debug', {
+        controller  : 'debugCtrl',
+        controllerAs: 'debugView',
+        templateUrl : './views/event/debug.html'
+    })
+
     .when('/event/:eventURL/users', {
         controller  : 'userListCtrl',
         controllerAs: 'userListView',
@@ -137,6 +143,12 @@ app.service('urlService', function() {
     };
     this.eventUsers = function(eventURL) {
         return(this.eventURL(eventURL) + 'users/');
+    };
+    this.eventSettings = function(eventURL) {
+        return(this.eventURL(eventURL) + 'settings/');
+    };
+    this.eventSettingsBackground = function(eventURL) {
+        return(this.eventSettings(eventURL) + 'eventBackground/');
     };
     this.eventUsersRole = function(eventURL, role) {
         return(this.eventUsers(eventURL) + role + '/');
@@ -417,6 +429,20 @@ app.service('jventService', function(urlService, $http, $q) {
             throw response.data; //HACK: Does this even make sense?
         });
     };
+    this.setEventBackground = function(media, eventURL) {
+        var url = urlService.eventSettingsBackground(eventURL);
+        var data = {
+            media: media
+        };
+        return $http.post(url, data)
+        .then(function(response) {
+            return;
+            // TODO
+        },
+        function(response) {
+            // TODO
+        });
+    }
     this.getEvents = function() {
         // $http.get('debugjson/events.json').then(function (data) {
         return $http.get(urlService.event())
@@ -1550,6 +1576,29 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
         });
     };
 });
+
+app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService) {
+    $scope.loaded = false;
+    $scope.loadEvent = function(event) {
+        $scope.event = event;
+        console.log($scope.event)
+        $scope.loaded = true;
+    };
+    $scope.refresh = function() {
+        return contextEvent.getEvent($routeParams.eventURL)
+        .then($scope.loadEvent)
+        .catch(function(error) {
+            Materialize.toast(error.status + ' ' + error.statusText, 4000);
+        });
+    };
+    $scope.refresh();
+    $scope.setEventBackground = function() {
+        var media = {
+            link: $scope.backgroundLink
+        }
+        jventService.setEventBackground(media, $scope.event.url);
+    }
+})
 
 //Post
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {

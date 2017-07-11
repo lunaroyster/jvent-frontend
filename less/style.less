@@ -201,6 +201,24 @@ nav {
         padding:2em;
     }
 }
+#debugView {
+    padding: 1em 1em 0em 1em;
+    .eventJSON {
+        margin-bottom: 1em;
+        padding: 1em;
+        background-color: @p0;
+    }
+    .control {
+        display: block;
+        position: relative;
+        width: 100%;
+        height: 4em;
+        .btn {
+            background-color: @p0;
+            height: 100%;
+        }
+    }
+}
 #postsView {
     .post {
         @post-height: 8em; //Something's wrong. This should work.
