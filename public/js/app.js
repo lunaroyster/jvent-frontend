@@ -72,6 +72,18 @@ app.config(['$routeProvider', function($routeProvider) {
         controllerAs: 'postView',
         templateUrl : './views/post/page.html'
     })
+    
+    .when('/event/:eventURL/media', {
+        controller  : 'mediaListCtrl',
+        controllerAs: 'mediaListView',
+        templateUrl : './views/media/list.html'
+    })
+    
+    .when('/event/:eventURL/media/:mediaURL', {
+        controller  : 'mediaCtrl',
+        controllerAs: 'mediaView',
+        templateUrl : './views/media/page.html'
+    })
 
     .when('/event/:eventURL/debug', {
         controller  : 'debugCtrl',
@@ -602,6 +614,7 @@ app.service('mediaService', function($http) {
     }
 });
 
+//  Types {
 app.service('Media', function($http, $q) {
     var Media = class {
         constructor(media) {
@@ -823,8 +836,7 @@ app.service('EventMembership', function(jventService, $q) {
     }
     return EventMembership;
 })
-
-// app.service('Event', function(Post) {})
+//  }
 
 //  List Providers {
 app.factory('eventListService', function(jventService, eventMembershipService, userService, Event, Media, $q) {
@@ -1434,7 +1446,7 @@ app.controller('homeController', function($scope, $rootScope, eventMembershipSer
 });
 
 //Event
-app.controller('eventListCtrl', function($scope, eventListService, navService, mediaService, $q) {
+app.controller('eventListCtrl', function($scope, eventListService, navService, $q) {
     $scope.loadEventMedia = function(event) {
         return event.backgroundImage.getAsBlob()
         .then(function(blobURL) {
@@ -1751,6 +1763,15 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
     };
 
     $scope.initialize();
+});
+
+//Media
+app.controller('mediaListCtrl', function($scope) {
+    
+});
+
+app.controller('mediaCtrl', function($scope) {
+    
 });
 
 //User
