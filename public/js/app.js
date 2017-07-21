@@ -169,6 +169,9 @@ app.service('urlService', function() {
     this.post = function(eventURL) {
         return(this.eventURL(eventURL) + 'post/');
     };
+    this.postRanked = function(eventURL, rank) {
+        return(this.post(eventURL) + '?rank=' + rank);
+    };
     this.postURL = function(eventURL, postURL) {
         return(this.post(eventURL) + postURL + '/');
     };
@@ -508,7 +511,7 @@ app.service('jventService', function(urlService, $http, $q) {
     this.getPosts = function(eventURL) {
         var req = {
             method: 'GET',
-            url: urlService.post(eventURL),
+            url: urlService.postRanked(eventURL, "hot"), //TODO: Temporary
         };
         return $http(req)
         .then(function(data) {
