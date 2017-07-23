@@ -193,6 +193,38 @@ app.service('urlService', function() {
     this.user = function() {
         return(this.api() + 'user/');
     };
+    
+    this.userMe = function() {
+        return(this.user() + 'me/');
+    };
+    this.userMeevent = function() {
+        return(this.userMe() + 'event/');
+    };
+    this.userMeEventRole = function(role) {
+        return(this.userMeevent() + 'role/' + role + '/');
+    };
+    this.userMeEventID = function(eventID) {
+        return(this.userMeevent() + eventID + '/');
+    };
+    this.userMeEventPost = function(eventID) {
+        return(this.userMeEventID(eventID) + 'post/');
+    };
+    this.userMeEventPostVotes = function(eventID) {
+        return(this.userMeEventPost(eventID) + 'votes/');
+    };
+    this.userMeEventMedia = function(eventID) {
+        return(this.userMeEventID(eventID) + 'media/');
+    };
+    this.userMePost = function() {
+        return(this.userMe() + 'post/');
+    };
+    this.userMePostVotes = function() {
+        return(this.userMePost() + 'votes/');
+    };
+    this.userMeMedia = function() {
+        return(this.userMe() + 'media/');
+    };
+    
     this.userEvents = function() {
         return(this.user() + 'events/');
     };
@@ -551,6 +583,14 @@ app.service('jventService', function(urlService, $http, $q) {
     };
     this.getUserList = function(eventURL, role) {
         var url = urlService.eventUsersRole(eventURL, role);
+        return $http.get(url)
+        .then(function(response) {
+            return response.data;
+        });
+    };
+    this.getPostVotes = function(eventURL) {
+        var url = urlService.userMePostVotes();
+        if(eventURL) url = urlService.userMeEventPostVotes(eventURL);
         return $http.get(url)
         .then(function(response) {
             return response.data;
@@ -1079,6 +1119,10 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
     eventMembershipService.getEventMemberships();
     return eventMembershipService;
 })
+
+app.factory('postVoteService', function(jventService, userService) {
+    
+});
 
 app.factory('userListService', function(contextEvent, jventService, $q) {
     var userListService = {};
