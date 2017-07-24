@@ -1,6 +1,6 @@
 //  JS Options {
 "use strict";
-/* global angular Materialize markdown moment*/
+/* global angular Materialize markdown moment Q*/
 //  }
 //  {
 // ["$scope","$rootScope", "$routeParams", "userService","newObjectService","contextService","listService","skeletal service","angular library service"]
@@ -1121,7 +1121,40 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
 })
 
 app.factory('postVoteService', function(jventService, userService) {
-    
+    var PostVote = class PostVote {
+        constructor(postVote) {
+            this._time = {};
+            this._ = postVote;
+            this._time.fetch = Date.now();            
+        }
+        get direction() {
+            return this._.direction;
+        }
+        get post() {
+            return this._.post;
+        }
+        get event() {
+            return this._.event;
+        }
+    };
+    var postVoteService = class postVoteService {
+        constructor() {
+            this._ = {};
+            this._.votes = {};
+        }
+        fetchAllVotes() {
+            return Q.fcall(function() {
+                jventService.getPostVotes();
+            })
+            .then(function(rawPostVoteArray) {
+                for(var rawPostVote of rawPostVoteArray) {
+                    var newPostVote = new PostVote(rawPostVote);
+                    this._.votes[newPostVote.post] = newPostVote;
+                }
+            });
+        }
+    };
+    return new postVoteService;
 });
 
 app.factory('userListService', function(contextEvent, jventService, $q) {
