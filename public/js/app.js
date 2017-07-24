@@ -596,7 +596,7 @@ app.service('jventService', function(urlService, $http, $q) {
         if(eventURL) url = urlService.userMeEventPostVotes(eventURL);
         return $http.get(url)
         .then(function(response) {
-            return response.data;
+            return response.data.votes;
         });
     };
     this.getEventMemberships = function() {
@@ -786,7 +786,7 @@ app.service('Post', function(jventService, validationService, $q) {
             this._ = post; //TODO: rename to _post?
             this._time.fetch = Date.now();
             this._vote = {
-                object: {},
+                object: undefined,
                 direction: undefined
             }
             this.invoke("load");
@@ -806,6 +806,9 @@ app.service('Post', function(jventService, validationService, $q) {
             return PostObjectArray;
         }
 
+        get id() {
+            return this._._id;
+        }
         get url() {
             return this._.url;
         };
@@ -835,7 +838,7 @@ app.service('Post', function(jventService, validationService, $q) {
                 this._vote.direction = undefined;
             }
             if(typeof(v)=="number" && validationService(v).isVote()) {
-                this._vote.direction == v
+                this._vote.direction = v;
                 this.invoke("vote", [v]);
             }
         }
@@ -1154,20 +1157,25 @@ app.factory('postVoteService', function(jventService, userService) {
         constructor() {
             this._ = {};
             this._.votes = {};
+            this.fetchAllVotes();
         }
         fetchAllVotes() {
+            var _this = this;
             return Q.fcall(function() {
-                jventService.getPostVotes();
+                return jventService.getPostVotes();
             })
             .then(function(rawPostVoteArray) {
-                for(var rawPostVote of rawPostVoteArray) {
+                for (var rawPostVote of rawPostVoteArray) {
                     var newPostVote = new PostVote(rawPostVote);
-                    this._.votes[newPostVote.post] = newPostVote;
+                    _this._.votes[newPostVote.post] = newPostVote;
                 }
             });
         }
+        getVote(post) {
+            return this._.votes[post.id];
+        }
     };
-    return new postVoteService;
+    return new postVoteService();
 });
 
 app.factory('userListService', function(contextEvent, jventService, $q) {
@@ -1230,6 +1238,7 @@ app.factory('postListService', function(Post, contextEvent, postVoteService, jve
             post.on("vote", function(direction) {
                 return jventService.postVote(contextEvent.event.url, this.url, direction);
             });
+            post.vote = postVoteService.getVote(post);
         }
         postListService.postList = newPostList;
         postListService.eventURL = event.url;
