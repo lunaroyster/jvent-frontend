@@ -289,6 +289,9 @@ app.service('validationService', function() {
                 var emailRegex = new RegExp(/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/);
                 return emailRegex.test(value);
             },
+            isVote: function() {
+                return(value===-1||value===0||value===1);
+            },
             inRange: function(min, max) {
                 return(value>=min && value<=max);
             },
@@ -772,7 +775,7 @@ app.service('Event', function(jventService, $q) {
     return Event;
 });
 
-app.service('Post', function(jventService, $q) {
+app.service('Post', function(jventService, validationService, $q) {
     var Post = class {
         constructor(post) {
             //initialize post
@@ -782,6 +785,10 @@ app.service('Post', function(jventService, $q) {
             this._time = {};
             this._ = post; //TODO: rename to _post?
             this._time.fetch = Date.now();
+            this._vote = {
+                object: {},
+                direction: undefined
+            }
             this.invoke("load");
         }
 
@@ -818,11 +825,17 @@ app.service('Post', function(jventService, $q) {
             return this._.content;
         }
         get vote() {
-            return this._.vote;
+            if(this._vote.object) return this._vote.object.direction;
+            return this._vote.direction;
         }
         set vote(v) {
-            if(this._.vote!=v) {
-                this._.vote = v;
+            if(typeof(v)=="object" && v.constructor.name=="postVote") {
+                this._vote.object = v;
+                this.invoke("vote", [v.direction]);
+                this._vote.direction = undefined;
+            }
+            if(typeof(v)=="number" && validationService(v).isVote()) {
+                this._vote.direction == v
                 this.invoke("vote", [v]);
             }
         }
@@ -1125,7 +1138,7 @@ app.factory('postVoteService', function(jventService, userService) {
         constructor(postVote) {
             this._time = {};
             this._ = postVote;
-            this._time.fetch = Date.now();            
+            this._time.fetch = Date.now();
         }
         get direction() {
             return this._.direction;
@@ -1192,7 +1205,7 @@ app.factory('userListService', function(contextEvent, jventService, $q) {
     return userListService;
 });
 
-app.factory('postListService', function(Post, contextEvent, jventService, $q) {
+app.factory('postListService', function(Post, contextEvent, postVoteService, jventService, $q) {
     var postListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -1847,11 +1860,11 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
 
 //Media
 app.controller('mediaListCtrl', function($scope) {
-    
+
 });
 
 app.controller('mediaCtrl', function($scope) {
-    
+
 });
 
 //User
