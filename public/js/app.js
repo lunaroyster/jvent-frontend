@@ -705,6 +705,10 @@ app.service('Media', function($http, $q) {
         }
 
         get link() {
+            //TODO: find a more elegant solution
+            if(window.location.protocol=="https:") {
+                return this._.link.replace("http:", "https:");
+            }
             return this._.link;
         }
 

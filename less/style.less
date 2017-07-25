@@ -229,9 +229,15 @@ nav {
             cursor: pointer;
             display: flex;
             .mediaContainer {
-                display: inline-block;
+                display: inline-flex;
                 height: 100%;
                 width: @post-height;
+                justify-content: center;
+                align-items: center;
+                i {
+                    font-size: 5em;
+                    color: #333;
+                }
             }
             .otherContainer {
                 position: relative;
