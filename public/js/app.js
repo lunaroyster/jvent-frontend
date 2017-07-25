@@ -1930,10 +1930,16 @@ app.controller('loginCtrl', function($scope, userService, navService) {
                 email: $scope.email,
                 password: $scope.password
             };
-            userService.login(creds, {remainSignedIn:$scope.remainSignedIn})
+            var options = {
+                remainSignedIn: $scope.remainSignedIn
+            }
+            userService.login(creds, options)
             .then(function(success) {
-                if (success) {
+                if(success) {
                     navService.home();
+                }
+                else {
+                    $scope.password = "";
                 }
             })
             .finally(function() {
