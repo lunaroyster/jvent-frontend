@@ -1159,6 +1159,14 @@ app.factory('postVoteService', function(jventService, userService) {
             this._ = {};
             this._.votes = {};
             this.fetchAllVotes();
+
+            var _this = this;
+            userService.on("login", function() {
+                console.log("login")
+            })
+            userService.on("logout", function() {
+                _this.flushVotes();
+            })
         }
         fetchAllVotes() {
             var _this = this;
@@ -1171,6 +1179,9 @@ app.factory('postVoteService', function(jventService, userService) {
                     _this._.votes[newPostVote.post] = newPostVote;
                 }
             });
+        }
+        flushVotes() {
+            this._.votes = {};
         }
         getVote(post) {
             return this._.votes[post.id];
