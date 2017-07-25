@@ -331,7 +331,7 @@ app.service('timeService', function() {
     };
 });
 
-app.service('notificationService', function() {
+app.service('dialogService', function() {
     this.networkError = function(error) {
         Materialize.toast(error.status + ' ' + error.statusText, 4000);
     };
@@ -343,6 +343,9 @@ app.service('notificationService', function() {
     this.genericError = function(error) {
         Materialize.toast(error.name + ': ' + error.message);
     };
+    this.message = function(message) {
+        Materialize.toast(message);
+    }
 })
 
 
@@ -1624,7 +1627,7 @@ app.controller('eventListCtrl', function($scope, eventListService, navService, $
     };
 });
 
-app.controller('newEventCtrl', function($scope, userService, newEventService, notificationService, navService) {
+app.controller('newEventCtrl', function($scope, userService, newEventService, dialogService, navService) {
     if(!userService.authed) {
         navService.login();
     }
@@ -1642,7 +1645,7 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, no
                 navService.event(eventURL);
             },
             function(error) {
-                notificationService.paramMsgArrayError(error)
+                dialogService.paramMsgArrayError(error)
             })
             .finally(function() {
                 $scope.pendingRequest = false;
@@ -1652,7 +1655,7 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, no
     //TODO: Migrate more functionality to eventCreate. Get rid of jventService from here
 });
 
-app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdownService, notificationService, navService) {
+app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdownService, dialogService, navService) {
     $scope.loaded = false;
     $scope.loadEvent = function(event) {
         $scope.event = event;
@@ -1662,7 +1665,7 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
         return contextEvent.getEvent($routeParams.eventURL)
         .then($scope.loadEvent)
         .catch(function(error) {
-            notificationService.networkError(error);
+            dialogService.networkError(error);
         });
     };
     $scope.refresh();
@@ -1724,18 +1727,20 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
     };
 });
 
-app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, notificationService, postVoteService) {
+app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, dialogService, postVoteService) {
     $scope.loaded = false;
     $scope.loadEvent = function(event) {
         $scope.event = event;
         console.log($scope.event)
+        console.log(postVoteService)
+        postVoteService.fetchAllVotes();
         $scope.loaded = true;
     };
     $scope.refresh = function() {
         return contextEvent.getEvent($routeParams.eventURL)
         .then($scope.loadEvent)
         .catch(function(error) {
-            notificationService.networkError(error)
+            dialogService.networkError(error)
         });
     };
     $scope.refresh();
@@ -1798,7 +1803,7 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     $scope.initialize();
 });
 
-app.controller('newPostCtrl', function($scope, $routeParams, userService, newMediaService, newPostService, contextEvent, markdownService, notificationService, navService) {
+app.controller('newPostCtrl', function($scope, $routeParams, userService, newMediaService, newPostService, contextEvent, markdownService, dialogService, navService) {
     if(!userService.authed) {
         navService.login();
     }
@@ -1809,7 +1814,7 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
             $scope.event = event;
         })
         .catch(function(error) {
-            notificationService.networkError(error);
+            dialogService.networkError(error);
         });
     };
     $scope.refresh();
@@ -1831,7 +1836,7 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
                 navService.post($scope.event.url, response.postURL);
             })
             .catch(function(error) {
-                notificationService.genericError(error);
+                dialogService.genericError(error);
             })
             .finally(function() {
                 $scope.pendingRequest = false;
@@ -1840,7 +1845,7 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
     };
 });
 
-app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEvent, markdownService, timeService, navService, notificationService, $sce, $window) {
+app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEvent, markdownService, timeService, navService, dialogService, $sce, $window) {
     $scope.loaded = false;
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
 
@@ -1851,7 +1856,7 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
             return contextPost.getPost($routeParams.postURL) // Where is event resolved?
             .then($scope.loadPost)
             .catch(function(error) {
-                notificationService.networkError(error)
+                dialogService.networkError(error)
             });
         });
     };
@@ -1932,7 +1937,7 @@ app.controller('signUpCtrl', function($scope, userService, navService) {
     };
 });
 
-app.controller('loginCtrl', function($scope, userService, navService) {
+app.controller('loginCtrl', function($scope, userService, navService, dialogService) {
     $scope.email;
     $scope.password;
     $scope.remainSignedIn = false;
@@ -1954,6 +1959,7 @@ app.controller('loginCtrl', function($scope, userService, navService) {
                 }
                 else {
                     $scope.password = "";
+                    dialogService.message("That failed. Check your creds.")
                 }
             })
             .finally(function() {
