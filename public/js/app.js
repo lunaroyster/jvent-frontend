@@ -334,12 +334,15 @@ app.service('timeService', function() {
 app.service('notificationService', function() {
     this.networkError = function(error) {
         Materialize.toast(error.status + ' ' + error.statusText, 4000);
-    }
+    };
     this.paramMsgArrayError = function(error) {
         for (var err of error) {
             Materialize.toast(err.param + ' ' + err.msg, 4000);
         }
-    }
+    };
+    this.genericError = function(error) {
+        Materialize.toast(error.name + ': ' + error.message);
+    };
 })
 
 
@@ -1499,16 +1502,20 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
     newPostService.post = post;
     newPostService.media = newMediaService.media;
     var publishPost = function() {
-        if(!valid.all()) throw Error("Validation Failed");
-        return jventService.createPost(undefined, newPostService.post, contextEvent.event.url)
+        return Q.fcall(function() {
+            if(!valid.all()) throw new Error("Validation Failed");
+            return jventService.createPost(undefined, newPostService.post, contextEvent.event.url)
+        })
         .then(function(response) {
             reset();
             return(response);
         });
     };
     var publishPostAndMedia = function() {
-        if(!valid.all()||!newMediaService.valid.all()) throw Error("Validation Failed");
-        return jventService.createPost(newMediaService.media, newPostService.post, contextEvent.event.url)
+        return Q.fcall(function() {
+            if(!valid.all()||!newMediaService.valid.all()) throw new Error("Validation Failed");
+            return jventService.createPost(newMediaService.media, newPostService.post, contextEvent.event.url)
+        })
         .then(function(response) {
             reset();
             return(response);
@@ -1822,9 +1829,9 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
             newPostService.publish()
             .then(function(response) {
                 navService.post($scope.event.url, response.postURL);
-            },
-            function(error) {
-                notificationService.paramMsgArrayError(error);
+            })
+            .catch(function(error) {
+                notificationService.genericError(error);
             })
             .finally(function() {
                 $scope.pendingRequest = false;
