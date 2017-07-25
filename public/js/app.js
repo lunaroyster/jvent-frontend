@@ -1,6 +1,6 @@
 //  JS Options {
 "use strict";
-/* global angular Materialize markdown moment*/
+/* global angular Materialize markdown moment Q*/
 //  }
 //  {
 // ["$scope","$rootScope", "$routeParams", "userService","newObjectService","contextService","listService","skeletal service","angular library service"]
@@ -193,6 +193,38 @@ app.service('urlService', function() {
     this.user = function() {
         return(this.api() + 'user/');
     };
+    
+    this.userMe = function() {
+        return(this.user() + 'me/');
+    };
+    this.userMeevent = function() {
+        return(this.userMe() + 'event/');
+    };
+    this.userMeEventRole = function(role) {
+        return(this.userMeevent() + 'role/' + role + '/');
+    };
+    this.userMeEventID = function(eventID) {
+        return(this.userMeevent() + eventID + '/');
+    };
+    this.userMeEventPost = function(eventID) {
+        return(this.userMeEventID(eventID) + 'post/');
+    };
+    this.userMeEventPostVotes = function(eventID) {
+        return(this.userMeEventPost(eventID) + 'votes/');
+    };
+    this.userMeEventMedia = function(eventID) {
+        return(this.userMeEventID(eventID) + 'media/');
+    };
+    this.userMePost = function() {
+        return(this.userMe() + 'post/');
+    };
+    this.userMePostVotes = function() {
+        return(this.userMePost() + 'votes/');
+    };
+    this.userMeMedia = function() {
+        return(this.userMe() + 'media/');
+    };
+    
     this.userEvents = function() {
         return(this.user() + 'events/');
     };
@@ -256,6 +288,9 @@ app.service('validationService', function() {
             isEmail: function() {
                 var emailRegex = new RegExp(/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/);
                 return emailRegex.test(value);
+            },
+            isVote: function() {
+                return(value===-1||value===0||value===1);
             },
             inRange: function(min, max) {
                 return(value>=min && value<=max);
@@ -556,6 +591,14 @@ app.service('jventService', function(urlService, $http, $q) {
             return response.data;
         });
     };
+    this.getPostVotes = function(eventURL) {
+        var url = urlService.userMePostVotes();
+        if(eventURL) url = urlService.userMeEventPostVotes(eventURL);
+        return $http.get(url)
+        .then(function(response) {
+            return response.data.votes;
+        });
+    };
     this.getEventMemberships = function() {
         var url = urlService.userEvents();
         return $http.get(url)
@@ -732,7 +775,7 @@ app.service('Event', function(jventService, $q) {
     return Event;
 });
 
-app.service('Post', function(jventService, $q) {
+app.service('Post', function(jventService, validationService, $q) {
     var Post = class {
         constructor(post) {
             //initialize post
@@ -742,6 +785,10 @@ app.service('Post', function(jventService, $q) {
             this._time = {};
             this._ = post; //TODO: rename to _post?
             this._time.fetch = Date.now();
+            this._vote = {
+                object: undefined,
+                direction: undefined
+            }
             this.invoke("load");
         }
 
@@ -759,6 +806,9 @@ app.service('Post', function(jventService, $q) {
             return PostObjectArray;
         }
 
+        get id() {
+            return this._._id;
+        }
         get url() {
             return this._.url;
         };
@@ -778,11 +828,18 @@ app.service('Post', function(jventService, $q) {
             return this._.content;
         }
         get vote() {
-            return this._.vote;
+            if(this._vote.object) return this._vote.object.direction;
+            return this._vote.direction;
         }
         set vote(v) {
-            if(this._.vote!=v) {
-                this._.vote = v;
+            if(typeof(v)=="object" && v.constructor.name=="PostVote") {
+                this._vote.object = v;
+                // this.invoke("vote", [v.direction]);
+                this._vote.direction = undefined;
+            }
+            if(typeof(v)=="number" && validationService(v).isVote()) {
+                this._vote.direction = v;
+                this._vote.object = undefined;
                 this.invoke("vote", [v]);
             }
         }
@@ -1080,6 +1137,59 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
     return eventMembershipService;
 })
 
+app.factory('postVoteService', function(jventService, userService) {
+    var PostVote = class PostVote {
+        constructor(postVote) {
+            this._time = {};
+            this._ = postVote;
+            this._time.fetch = Date.now();
+        }
+        get direction() {
+            return this._.direction;
+        }
+        get post() {
+            return this._.post;
+        }
+        get event() {
+            return this._.event;
+        }
+    };
+    var postVoteService = class postVoteService {
+        constructor() {
+            this._ = {};
+            this._.votes = {};
+            this.fetchAllVotes();
+
+            var _this = this;
+            userService.on("login", function() {
+                console.log("login")
+            })
+            userService.on("logout", function() {
+                _this.flushVotes();
+            })
+        }
+        fetchAllVotes() {
+            var _this = this;
+            return Q.fcall(function() {
+                return jventService.getPostVotes();
+            })
+            .then(function(rawPostVoteArray) {
+                for (var rawPostVote of rawPostVoteArray) {
+                    var newPostVote = new PostVote(rawPostVote);
+                    _this._.votes[newPostVote.post] = newPostVote;
+                }
+            });
+        }
+        flushVotes() {
+            this._.votes = {};
+        }
+        getVote(post) {
+            return this._.votes[post.id];
+        }
+    };
+    return new postVoteService();
+});
+
 app.factory('userListService', function(contextEvent, jventService, $q) {
     var userListService = {};
     var lastQuery = {};
@@ -1115,7 +1225,7 @@ app.factory('userListService', function(contextEvent, jventService, $q) {
     return userListService;
 });
 
-app.factory('postListService', function(Post, contextEvent, jventService, $q) {
+app.factory('postListService', function(Post, contextEvent, postVoteService, jventService, $q) {
     var postListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -1140,6 +1250,7 @@ app.factory('postListService', function(Post, contextEvent, jventService, $q) {
             post.on("vote", function(direction) {
                 return jventService.postVote(contextEvent.event.url, this.url, direction);
             });
+            post.vote = postVoteService.getVote(post);
         }
         postListService.postList = newPostList;
         postListService.eventURL = event.url;
@@ -1228,7 +1339,7 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, Media, Post, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, postVoteService, Media, Post, jventService, $q) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -1241,6 +1352,7 @@ app.factory('contextPost', function(contextEvent, mediaService, Media, Post, jve
         post.on("vote", function(direction) {
             return jventService.postVote(contextEvent.event.url, this.url, direction);
         });
+        post.vote = postVoteService.getVote(post);
         if(post.media && post.media.media) {
             post.media.media = new Media(post.media.media);
         }
@@ -1415,7 +1527,7 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
 
 //  Controllers {
 
-app.controller('homeController', function($scope, $rootScope, eventMembershipService, userService, navService, $location) {
+app.controller('homeController', function($scope, $rootScope, eventMembershipService, postVoteService, userService, navService, $location) {
     $scope.homeClick = function() {
         navService.home();
     };
@@ -1770,11 +1882,11 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
 
 //Media
 app.controller('mediaListCtrl', function($scope) {
-    
+
 });
 
 app.controller('mediaCtrl', function($scope) {
-    
+
 });
 
 //User
