@@ -72,13 +72,13 @@ app.config(['$routeProvider', function($routeProvider) {
         controllerAs: 'postView',
         templateUrl : './views/post/page.html'
     })
-    
+
     .when('/event/:eventURL/media', {
         controller  : 'mediaListCtrl',
         controllerAs: 'mediaListView',
         templateUrl : './views/media/list.html'
     })
-    
+
     .when('/event/:eventURL/media/:mediaURL', {
         controller  : 'mediaCtrl',
         controllerAs: 'mediaView',
@@ -193,7 +193,7 @@ app.service('urlService', function() {
     this.user = function() {
         return(this.api() + 'user/');
     };
-    
+
     this.userMe = function() {
         return(this.user() + 'me/');
     };
@@ -224,7 +224,7 @@ app.service('urlService', function() {
     this.userMeMedia = function() {
         return(this.userMe() + 'media/');
     };
-    
+
     this.userEvents = function() {
         return(this.user() + 'events/');
     };
@@ -331,6 +331,16 @@ app.service('timeService', function() {
     };
 });
 
+app.service('notificationService', function() {
+    this.networkError = function(error) {
+        Materialize.toast(error.status + ' ' + error.statusText, 4000);
+    }
+    this.paramMsgArrayError = function(error) {
+        for (var err of error) {
+            Materialize.toast(err.param + ' ' + err.msg, 4000);
+        }
+    }
+})
 
 
 app.factory('userService', function($rootScope, urlService, $http, $q) {
@@ -706,6 +716,7 @@ app.service('Media', function($http, $q) {
 
         get link() {
             //TODO: find a more elegant solution
+            console.warn("HACK: Changed link protocol arbitrarily")
             if(window.location.protocol=="https:") {
                 return this._.link.replace("http:", "https:");
             }
@@ -1606,7 +1617,7 @@ app.controller('eventListCtrl', function($scope, eventListService, navService, $
     };
 });
 
-app.controller('newEventCtrl', function($scope, userService, newEventService, navService) {
+app.controller('newEventCtrl', function($scope, userService, newEventService, notificationService, navService) {
     if(!userService.authed) {
         navService.login();
     }
@@ -1623,10 +1634,8 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, na
             .then(function(eventURL) {
                 navService.event(eventURL);
             },
-            function(err) {
-                for (var i = 0; i < err.length; i++) {
-                    Materialize.toast(err[i].param + ' ' + err[i].msg, 4000);
-                }
+            function(error) {
+                notificationService.paramMsgArrayError(error)
             })
             .finally(function() {
                 $scope.pendingRequest = false;
@@ -1636,7 +1645,7 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, na
     //TODO: Migrate more functionality to eventCreate. Get rid of jventService from here
 });
 
-app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdownService, navService) {
+app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdownService, notificationService, navService) {
     $scope.loaded = false;
     $scope.loadEvent = function(event) {
         $scope.event = event;
@@ -1646,7 +1655,7 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
         return contextEvent.getEvent($routeParams.eventURL)
         .then($scope.loadEvent)
         .catch(function(error) {
-            Materialize.toast(error.status + ' ' + error.statusText, 4000);
+            notificationService.networkError(error);
         });
     };
     $scope.refresh();
@@ -1708,7 +1717,7 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
     };
 });
 
-app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService) {
+app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, notificationService, postVoteService) {
     $scope.loaded = false;
     $scope.loadEvent = function(event) {
         $scope.event = event;
@@ -1719,7 +1728,7 @@ app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventSe
         return contextEvent.getEvent($routeParams.eventURL)
         .then($scope.loadEvent)
         .catch(function(error) {
-            Materialize.toast(error.status + ' ' + error.statusText, 4000);
+            notificationService.networkError(error)
         });
     };
     $scope.refresh();
@@ -1782,7 +1791,7 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     $scope.initialize();
 });
 
-app.controller('newPostCtrl', function($scope, $routeParams, userService, newMediaService, newPostService, contextEvent, markdownService, navService) {
+app.controller('newPostCtrl', function($scope, $routeParams, userService, newMediaService, newPostService, contextEvent, markdownService, notificationService, navService) {
     if(!userService.authed) {
         navService.login();
     }
@@ -1793,7 +1802,7 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
             $scope.event = event;
         })
         .catch(function(error) {
-            Materialize.toast(error.status + ' ' + error.statusText, 4000);
+            notificationService.networkError(error);
         });
     };
     $scope.refresh();
@@ -1814,10 +1823,8 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
             .then(function(response) {
                 navService.post($scope.event.url, response.postURL);
             },
-            function(err) {
-                for (var i = 0; i < err.length; i++) {
-                    Materialize.toast(err[i].param + ' ' + err[i].msg, 4000);
-                }
+            function(error) {
+                notificationService.paramMsgArrayError(error);
             })
             .finally(function() {
                 $scope.pendingRequest = false;
@@ -1826,7 +1833,7 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
     };
 });
 
-app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEvent, markdownService, timeService, navService, $sce, $window) {
+app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEvent, markdownService, timeService, navService, notificationService, $sce, $window) {
     $scope.loaded = false;
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
 
@@ -1837,7 +1844,7 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
             return contextPost.getPost($routeParams.postURL) // Where is event resolved?
             .then($scope.loadPost)
             .catch(function(error) {
-                Materialize.toast(error.status + ' ' + error.statusText, 4000);
+                notificationService.networkError(error)
             });
         });
     };
