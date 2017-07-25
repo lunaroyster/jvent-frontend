@@ -832,13 +832,14 @@ app.service('Post', function(jventService, validationService, $q) {
             return this._vote.direction;
         }
         set vote(v) {
-            if(typeof(v)=="object" && v.constructor.name=="postVote") {
+            if(typeof(v)=="object" && v.constructor.name=="PostVote") {
                 this._vote.object = v;
-                this.invoke("vote", [v.direction]);
+                // this.invoke("vote", [v.direction]);
                 this._vote.direction = undefined;
             }
             if(typeof(v)=="number" && validationService(v).isVote()) {
                 this._vote.direction = v;
+                this._vote.object = undefined;
                 this.invoke("vote", [v]);
             }
         }
@@ -1327,7 +1328,7 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, Media, Post, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, postVoteService, Media, Post, jventService, $q) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -1340,6 +1341,7 @@ app.factory('contextPost', function(contextEvent, mediaService, Media, Post, jve
         post.on("vote", function(direction) {
             return jventService.postVote(contextEvent.event.url, this.url, direction);
         });
+        post.vote = postVoteService.getVote(post);
         if(post.media && post.media.media) {
             post.media.media = new Media(post.media.media);
         }
@@ -1514,7 +1516,7 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
 
 //  Controllers {
 
-app.controller('homeController', function($scope, $rootScope, eventMembershipService, userService, navService, $location) {
+app.controller('homeController', function($scope, $rootScope, eventMembershipService, postVoteService, userService, navService, $location) {
     $scope.homeClick = function() {
         navService.home();
     };
