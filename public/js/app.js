@@ -649,6 +649,17 @@ app.service('jventService', function(urlService, $http, $q) {
             return response.data;
         });
     };
+    this.getImageUploadToken = function(fileName, fileType) {
+        var url = urlService.serviceMediaImageToken;
+        return $http.get({
+            url: url,
+            method: "GET",
+            params: {"file-name": fileName, "file-type": fileType}
+        })
+        .then(function(response) {
+            return response.data;
+        });
+    };
 });
 
 app.service('mediaService', function($http) {
