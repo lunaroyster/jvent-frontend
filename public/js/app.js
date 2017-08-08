@@ -243,6 +243,19 @@ app.service('urlService', function() {
     this.userAuthenticate = function() {
         return(this.user() + 'authenticate/');
     };
+    
+    this.service = function() {
+        return(this.api() + 'service/');
+    };
+    this.serviceMedia = function() {
+        return(this.service() + 'media/');
+    };
+    this.serviceMediaImage = function() {
+        return(this.serviceMedia() + 'image/');
+    };
+    this.serviceMediaImageToken = function() {
+        return(this.serviceMediaImage() + 'token/');
+    };
 });
 
 app.service('navService', function($location) {
