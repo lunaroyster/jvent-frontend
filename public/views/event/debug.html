@@ -5,6 +5,16 @@
             <input id="name" type="text" ng-model="backgroundLink" length="144" required></input>
             <label for="name">Event Background URL</label>
         </div>
+        <div class="file-field input-field">
+            <div class="btn">
+                <span>File</span>
+                <input type="file" id="filePicker">
+            </div>
+            <div class="file-path-wrapper">
+                <input class="file-path validate" type="text">
+            </div>
+        </div>
         <button class="col s6 btn waves-effect waves-light" ng-click="setEventBackground()">Set Event background</button>
+        
     </div>
 </div>

@@ -1776,7 +1776,7 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
     };
 });
 
-app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, dialogService, postVoteService) {
+app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, dialogService, postVoteService, awsService) {
     $scope.loaded = false;
     $scope.loadEvent = function(event) {
         $scope.event = event;
@@ -1794,12 +1794,23 @@ app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventSe
     };
     $scope.refresh();
     $scope.setEventBackground = function() {
-        var media = {
-            link: $scope.backgroundLink
-        }
-        jventService.setEventBackground(media, $scope.event.url);
-    }
-})
+        // var media = {
+        //     link: $scope.backgroundLink
+        // }
+        var image = $("#filePicker")[0].files[0];
+        jventService.getImageUploadToken(image.name, image.type)
+        .then(function(response) {
+            console.log(response)
+            return awsService.uploadImageToS3(image, response.signedRequest)
+            .then(function() {
+                return response.url;
+            });
+        })
+        .then(function(url) {
+            jventService.setEventBackground({link: url}, $scope.event.url);
+        });
+    };
+});
 
 //Post
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {
