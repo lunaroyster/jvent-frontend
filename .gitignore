@@ -30,7 +30,7 @@ build/Release
 public/less
 
 # Temporary folder
-frontend/public/misc
+public/misc
 
 # Dependency directories
 node_modules

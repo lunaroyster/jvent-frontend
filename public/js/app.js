@@ -650,13 +650,38 @@ app.service('jventService', function(urlService, $http, $q) {
         });
     };
     this.getImageUploadToken = function(fileName, fileType) {
-        var url = urlService.serviceMediaImageToken;
-        return $http.get({
+        var url = urlService.serviceMediaImageToken();
+        return $http({
             url: url,
             method: "GET",
-            params: {"file-name": fileName, "file-type": fileType}
+            params: {
+                "fileName": fileName,
+                "fileType": fileType
+            }
         })
         .then(function(response) {
+            return response.data;
+        });
+    };
+});
+
+app.service('awsService', function($http, $q) {
+    this.uploadImageToS3 = function(image, signedRequestURL) {
+        var blob = new Blob([image], {type: image.type});
+        var config = {
+            url: signedRequestURL,
+            method: 'PUT',
+            headers: {
+                'Authorization': undefined,
+                'Content-Type': image.type 
+            },
+            processData: false,
+            data: blob,
+            // transformRequest: angular.identity
+        };
+        return $http(config)
+        .then(function(response) {
+            //TODO
             return response.data;
         });
     };
