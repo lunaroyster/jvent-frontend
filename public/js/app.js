@@ -1,6 +1,6 @@
 //  JS Options {
 "use strict";
-/* global $ angular Materialize markdown moment Q*/
+/* global $ angular Materialize markdown moment Q URL Blob*/
 //  }
 //  {
 // ["$scope","$rootScope", "$routeParams", "userService","newObjectService","contextService","listService","skeletal service","angular library service"]
@@ -1717,6 +1717,17 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, di
             });
         }
     };
+    $scope.backgroundImageChange = function(e) {
+        var imageFiles = e.target.files[0];
+        $scope.newEvent.backgroundImage = imageFiles;
+        $scope.backgroundImagePreviewURL = URL.createObjectURL(imageFiles);
+        //move $scope.backgroundImagePreviewURL to $scope.newEvent?
+        $scope.$digest();
+    };
+    $scope.initialize = function() {
+        $("#eventBackgroundImageUpload")[0].addEventListener('change', $scope.backgroundImageChange);
+    };
+    $scope.initialize();
     //TODO: Migrate more functionality to eventCreate. Get rid of jventService from here
 });
 
