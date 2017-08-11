@@ -1,6 +1,6 @@
 //  JS Options {
 "use strict";
-/* global angular Materialize markdown moment Q*/
+/* global $ angular Materialize markdown moment Q*/
 //  }
 //  {
 // ["$scope","$rootScope", "$routeParams", "userService","newObjectService","contextService","listService","skeletal service","angular library service"]
@@ -1468,22 +1468,38 @@ app.factory('contextPost', function(contextEvent, mediaService, postVoteService,
 //  }
 
 //  New Providers {
-app.factory('newEventService', function(userService, validationService, jventService) {
+app.factory('newEventService', function(userService, validationService, jventService, awsService) {
     var newEventService = {};
     var event = {};
     newEventService.event = event;
     newEventService.event.organizer = {
         name: userService.user()
     }; //Is this even required?
+    
+    var publishImage = function(image) {
+        return jventService.getImageUploadToken(image.name, image.type)
+        .then(function(response) {
+            return awsService.uploadImageToS3(image, response.signedRequest)
+            .then(function() {
+                return response.url;
+            });
+        })
+    };
     newEventService.publish = function() {
-        if(valid.all()) {
-            return jventService.createEvent(newEventService.event)
-            .then(function(eventURL) {
+        if(!valid.all()) return; //Throw error?
+        return jventService.createEvent(newEventService.event)
+        .then(function(eventURL) {
+            return publishImage(newEventService.event.backgroundImage)
+            .then(function(backgroundImageURL) {
+                return jventService.setEventBackground({link: backgroundImageURL}, eventURL);
+            })
+            .then(function() {
                 reset();
                 return(eventURL);
             });
-        }
+        });
     };
+    
     var reset = function() {
         newEventService.event = {};
     };
