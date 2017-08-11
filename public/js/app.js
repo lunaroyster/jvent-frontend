@@ -316,6 +316,12 @@ app.service('validationService', function() {
             },
             isIn: function(array) {
                 return array.indexOf(value)!=-1;
+            },
+            isOfType: function(type) {
+                return typeof(value)==type;
+            },
+            isOfObjectType: function(type) {
+                return(value.constructor.name==type);
             }
         }
     }
@@ -1489,14 +1495,20 @@ app.factory('newEventService', function(userService, validationService, jventSer
         if(!valid.all()) return; //Throw error?
         return jventService.createEvent(newEventService.event)
         .then(function(eventURL) {
+            if(!newEventService.event.backgroundImage || !valid.backgroundImage()) {
+                return(eventURL);
+            }
             return publishImage(newEventService.event.backgroundImage)
             .then(function(backgroundImageURL) {
                 return jventService.setEventBackground({link: backgroundImageURL}, eventURL);
             })
             .then(function() {
-                reset();
                 return(eventURL);
             });
+        })
+        .then(function(eventURL) {
+            reset();
+            return(eventURL);
         });
     };
     
@@ -1523,6 +1535,9 @@ app.factory('newEventService', function(userService, validationService, jventSer
         },
         comment: function() {
             return validationService(event.comment).isIn(["anyone", "attendee", "nobody"]);
+        },
+        backgroundImage: function() {
+            return validationService(event.backgroundImage).isOfObjectType("File");
         },
         all: function() {
             return (valid.name()&&valid.byline()&&valid.description()&&valid.visibility()&&valid.ingress()&&valid.comment());
