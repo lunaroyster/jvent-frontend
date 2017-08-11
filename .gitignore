@@ -29,8 +29,8 @@ build/Release
 # Compiled less files
 public/less
 
-# Temporary JS libs (Disabled)
-# frontend/public/misc
+# Temporary folder
+public/misc
 
 # Dependency directories
 node_modules

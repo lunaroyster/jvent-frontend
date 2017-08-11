@@ -1,6 +1,6 @@
 //  JS Options {
 "use strict";
-/* global angular Materialize markdown moment Q*/
+/* global $ angular Materialize markdown moment Q URL Blob*/
 //  }
 //  {
 // ["$scope","$rootScope", "$routeParams", "userService","newObjectService","contextService","listService","skeletal service","angular library service"]
@@ -243,6 +243,19 @@ app.service('urlService', function() {
     this.userAuthenticate = function() {
         return(this.user() + 'authenticate/');
     };
+    
+    this.service = function() {
+        return(this.api() + 'service/');
+    };
+    this.serviceMedia = function() {
+        return(this.service() + 'media/');
+    };
+    this.serviceMediaImage = function() {
+        return(this.serviceMedia() + 'image/');
+    };
+    this.serviceMediaImageToken = function() {
+        return(this.serviceMediaImage() + 'token/');
+    };
 });
 
 app.service('navService', function($location) {
@@ -303,6 +316,12 @@ app.service('validationService', function() {
             },
             isIn: function(array) {
                 return array.indexOf(value)!=-1;
+            },
+            isOfType: function(type) {
+                return typeof(value)==type;
+            },
+            isOfObjectType: function(type) {
+                return(value.constructor.name==type);
             }
         }
     }
@@ -633,6 +652,42 @@ app.service('jventService', function(urlService, $http, $q) {
         var url = urlService.userEventsRole(role);
         return $http.get(url)
         .then(function(response) {
+            return response.data;
+        });
+    };
+    this.getImageUploadToken = function(fileName, fileType) {
+        var url = urlService.serviceMediaImageToken();
+        return $http({
+            url: url,
+            method: "GET",
+            params: {
+                "fileName": fileName,
+                "fileType": fileType
+            }
+        })
+        .then(function(response) {
+            return response.data;
+        });
+    };
+});
+
+app.service('awsService', function($http, $q) {
+    this.uploadImageToS3 = function(image, signedRequestURL) {
+        var blob = new Blob([image], {type: image.type});
+        var config = {
+            url: signedRequestURL,
+            method: 'PUT',
+            headers: {
+                'Authorization': undefined,
+                'Content-Type': image.type 
+            },
+            processData: false,
+            data: blob,
+            // transformRequest: angular.identity
+        };
+        return $http(config)
+        .then(function(response) {
+            //TODO
             return response.data;
         });
     };
@@ -1419,22 +1474,44 @@ app.factory('contextPost', function(contextEvent, mediaService, postVoteService,
 //  }
 
 //  New Providers {
-app.factory('newEventService', function(userService, validationService, jventService) {
+app.factory('newEventService', function(userService, validationService, jventService, awsService) {
     var newEventService = {};
     var event = {};
     newEventService.event = event;
     newEventService.event.organizer = {
         name: userService.user()
     }; //Is this even required?
+    
+    var publishImage = function(image) {
+        return jventService.getImageUploadToken(image.name, image.type)
+        .then(function(response) {
+            return awsService.uploadImageToS3(image, response.signedRequest)
+            .then(function() {
+                return response.url;
+            });
+        })
+    };
     newEventService.publish = function() {
-        if(valid.all()) {
-            return jventService.createEvent(newEventService.event)
-            .then(function(eventURL) {
-                reset();
+        if(!valid.all()) return; //Throw error?
+        return jventService.createEvent(newEventService.event)
+        .then(function(eventURL) {
+            if(!newEventService.event.backgroundImage || !valid.backgroundImage()) {
+                return(eventURL);
+            }
+            return publishImage(newEventService.event.backgroundImage)
+            .then(function(backgroundImageURL) {
+                return jventService.setEventBackground({link: backgroundImageURL}, eventURL);
+            })
+            .then(function() {
                 return(eventURL);
             });
-        }
+        })
+        .then(function(eventURL) {
+            reset();
+            return(eventURL);
+        });
     };
+    
     var reset = function() {
         newEventService.event = {};
     };
@@ -1458,6 +1535,9 @@ app.factory('newEventService', function(userService, validationService, jventSer
         },
         comment: function() {
             return validationService(event.comment).isIn(["anyone", "attendee", "nobody"]);
+        },
+        backgroundImage: function() {
+            return validationService(event.backgroundImage).isOfObjectType("File");
         },
         all: function() {
             return (valid.name()&&valid.byline()&&valid.description()&&valid.visibility()&&valid.ingress()&&valid.comment());
@@ -1652,6 +1732,17 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, di
             });
         }
     };
+    $scope.backgroundImageChange = function(e) {
+        var imageFiles = e.target.files[0];
+        $scope.newEvent.backgroundImage = imageFiles;
+        $scope.backgroundImagePreviewURL = URL.createObjectURL(imageFiles);
+        //move $scope.backgroundImagePreviewURL to $scope.newEvent?
+        $scope.$digest();
+    };
+    $scope.initialize = function() {
+        $("#eventBackgroundImageUpload")[0].addEventListener('change', $scope.backgroundImageChange);
+    };
+    $scope.initialize();
     //TODO: Migrate more functionality to eventCreate. Get rid of jventService from here
 });
 
@@ -1727,7 +1818,7 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
     };
 });
 
-app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, dialogService, postVoteService) {
+app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, dialogService, postVoteService, awsService) {
     $scope.loaded = false;
     $scope.loadEvent = function(event) {
         $scope.event = event;
@@ -1745,12 +1836,23 @@ app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventSe
     };
     $scope.refresh();
     $scope.setEventBackground = function() {
-        var media = {
-            link: $scope.backgroundLink
-        }
-        jventService.setEventBackground(media, $scope.event.url);
-    }
-})
+        // var media = {
+        //     link: $scope.backgroundLink
+        // }
+        var image = $("#filePicker")[0].files[0];
+        jventService.getImageUploadToken(image.name, image.type)
+        .then(function(response) {
+            console.log(response)
+            return awsService.uploadImageToS3(image, response.signedRequest)
+            .then(function() {
+                return response.url;
+            });
+        })
+        .then(function(url) {
+            jventService.setEventBackground({link: url}, $scope.event.url);
+        });
+    };
+});
 
 //Post
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {
