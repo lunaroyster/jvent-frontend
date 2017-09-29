@@ -1,41 +1,23 @@
-var fs   = require('fs');
+var fse   = require('fs-extra');
 var path = require('path');
 var less = require('less');
-var Q = require('q');
 
 function toCSS(lessFileName) {
     return lessFileName.replace(".less", ".css");
 }
 
-var render = function() {
+module.exports = (async ()=> {
     console.log("Compiling LESS files");
-    var lessFolder = __dirname + "/less/";
-    var outFolder = __dirname + "/public/less/";
-    Q.fcall(function() {
-        return fs.readdirSync(lessFolder);
-    })
-    .then(function(lessFiles) {
-        var filePromises = [];
-        if (!fs.existsSync(outFolder)){
-            fs.mkdirSync(outFolder);
-        }
-        for (var lF in lessFiles) {
-            var lessFile = lessFiles[lF];
-            var filePromise = less.render(fs.readFileSync(lessFolder + lessFile).toString())
-            .then(function(output) {
-                var deferred = Q.defer();
-                fs.writeFile(outFolder+toCSS(lessFile), output.css, {flag:'w'}, function(error, output) {
-                    deferred.resolve();
-                    return;
-                });
-                return deferred.promise;
-            });
-            filePromises.push(filePromise);
-        }
-        return Q.all(filePromises);
-    })
-    .then(function() {
-        console.log("Compiled LESS files");
-    });
-};
-render();
+    
+    let lessFolder = `${__dirname}/less/`;
+    let outFolder = `${__dirname}/public/less/`;
+    await fse.ensureDir(outFolder);
+    
+    let lessFileNames = await fse.readdir(lessFolder);
+    for (let lessFileName of lessFileNames) {
+        let lessFile = await less.render((await fse.readFile(lessFolder + lessFileName)).toString());
+        await fse.writeFile(outFolder+toCSS(lessFileName), lessFile.css, {flag:'w'});
+    }
+    
+    console.log("Compiled LESS files");
+})();

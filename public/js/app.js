@@ -224,6 +224,9 @@ app.service('urlService', function() {
     this.userMeMedia = function() {
         return(this.userMe() + 'media/');
     };
+    this.userMeChangePassword = function() {
+        return(this.userMe() + 'changepassword/');
+    };
 
     this.userEvents = function() {
         return(this.user() + 'events/');
@@ -236,9 +239,6 @@ app.service('urlService', function() {
     };
     this.userSignUp = function() {
         return(this.user() + 'signup/');
-    };
-    this.userChangePassword = function() {
-        return(this.user() + 'changepassword/');
     };
     this.userAuthenticate = function() {
         return(this.user() + 'authenticate/');
@@ -476,7 +476,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj.changePassword = function(oldpassword, newpassword) {
         var req = {
             method: 'POST',
-            url: urlService.userChangePassword(),
+            url: urlService.userMeChangePassword(),
             headers: {
                 'oldpassword': oldpassword,
                 'newpassword': newpassword
