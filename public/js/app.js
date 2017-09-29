@@ -797,7 +797,7 @@ app.service('EventMembership', function(jventService) {
 //  }
 
 //  List Providers {
-app.factory('eventListService', function(jventService, eventMembershipService, userService, Event, Media, $q) {
+app.factory('eventListService', function(jventService, eventMembershipService, userService, Event, Media) {
     var eventListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -812,18 +812,15 @@ app.factory('eventListService', function(jventService, eventMembershipService, u
         //TODO: compare eventListService.query and lastQuery
         return false;
     };
-    var setEventList = function(rawEventList) {
-        var newEventList = Event.deserializeArray(rawEventList);
-        for (var event of newEventList) {
+    var setEventList = async function(rawEventList) {
+        let newEventList = Event.deserializeArray(rawEventList);
+        for (let event of newEventList) {
             if(event.backgroundImage) event.backgroundImage = new Media(event.backgroundImage);
             //TODO: Set eventMembership for event
-            eventMembershipService.getEventMembership(event)
-            .then(function(eventMembership) {
-                event.eventMembership = eventMembership;
-            })
+            // event.eventMembership = await eventMembershipService.getEventMembership(event);
         }
         userService.on("logout", function() {
-            for (var event of newEventList) {
+            for (let event of newEventList) {
                 event.eventMembership = null;
             }
         })
@@ -831,24 +828,16 @@ app.factory('eventListService', function(jventService, eventMembershipService, u
         lastUpdate = Date.now();
         eventListService.loadedEventList = true;
     };
-    eventListService.getEventList = function() {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(queryChange() || !fresh()) {
-                return jventService.getEvents()
-                .then(function(rawEventList) {
-                    setEventList(rawEventList);
-                });
-            }
-        })
-        .then(function() {
-            return(eventListService.eventList);
-        });
+    eventListService.getEventList = async function() {
+        if(queryChange() || !fresh()) {
+            setEventList(await jventService.getEvents());
+        }
+        return(eventListService.eventList);
     };
     return eventListService;
 });
 
-app.factory('userMembershipService', function(userService, contextEvent, jventService, $q) {
+app.factory('userMembershipService', function(userService, contextEvent, jventService) {
     var userMembershipService = {};
     userMembershipService.userLists = {};
     userMembershipService.cacheTime = 60000;
@@ -856,45 +845,28 @@ app.factory('userMembershipService', function(userService, contextEvent, jventSe
     var updateRequired = function(userList) {
         return !((Date.now() - userList.lastUpdate) < userMembershipService.cacheTime);
     };
-    var downloadAndCreateList = function(role) {
-        return jventService.getUserList(contextEvent.event.url, role)
-        .then(function(list) {
-            var userList = {
-                list: list,
-                role: role,
-                lastUpdate: Date.now(),
-                //lastQuery: query
-            };
-            return userList;
-        });
+    var downloadAndCreateList = async function(role) {
+        let list = await jventService.getUserList(contextEvent.event.url, role);
+        let userList = {
+            list: list,
+            role: role,
+            lastUpdate: Date.now(),
+            //lastQuery: query
+        };
+        return userList;
     };
-    userMembershipService.getUserList = function(role) {
-        return $q(function(resolve, reject) {
-            var userList = userMembershipService.userLists[role];
-            if(userList && !updateRequired(userList)) {
-                resolve(userList);
-            }
-            else {
-                downloadAndCreateList(role)
-                .then(function(uL) {
-                    resolve(uL);
-                });
-            }
-        })
-        .then(function(userList) {
-            userMembershipService.userLists[role] = userList;
-            return userList;
-        });
+    userMembershipService.getUserList = async function(role) {
+        let userList = userMembershipService.userLists[role];
+        if(!userList || updateRequired(userList)) {
+            userList = await downloadAndCreateList(role);
+        }
+        userMembershipService.userLists[role] = userList;
+        return userList;
     };
-    userMembershipService.initialize = function(eventURL) {
-        return contextEvent.getEvent(eventURL)
-        .then(function(event) {
-            //Check for moderator status.
-            return event;
-        })
-        .then(function(event) {
-            userMembershipService.roles = event.roles;
-        });
+    userMembershipService.initialize = async function(eventURL) {
+        let event = await contextEvent.getEvent(eventURL)
+        //Check for moderator status.
+        userMembershipService.roles = event.roles;
     };
     return userMembershipService;
 });
@@ -965,58 +937,39 @@ app.factory('userMembershipService', function(userService, contextEvent, jventSe
     return eventMembershipService;
 });*/
 
-app.factory('eventMembershipService', function(jventService, userService, EventMembership, $q) {
+app.factory('eventMembershipService', function(jventService, userService, EventMembership) {
     var eventMembershipService = {};
     eventMembershipService.eventMemberships = {};
     eventMembershipService.cacheTime = 60000;
     eventMembershipService.initialFetch = false;
-    eventMembershipService.fetchMembership = function(event) {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            return jventService.getEventMembershipByEventID(event.id)
-        })
-        .then(function(rawEventMembership) {
-            return EventMembership.deserializeObject(rawEventMembership);
-        });
+    eventMembershipService.fetchMembership = async function(event) {
+        let rawEventMembership = await jventService.getEventMembershipByEventID(event.id)
+        return EventMembership.deserializeObject(rawEventMembership);
     };
-    eventMembershipService.fetchMemberships = function() {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            return jventService.getEventMemberships();
-        })
-        .then(function(rawEventMemberships) {
-            return EventMembership.deserializeArray(rawEventMemberships);
-        });
+    eventMembershipService.fetchMemberships = async function() {
+        let rawEventMemberships = await jventService.getEventMemberships();
+        return EventMembership.deserializeArray(rawEventMemberships);
     };
-    eventMembershipService.getEventMembership = function(event) {
+    eventMembershipService.getEventMembership = async function(event) {
         //Returns corresponding eventMembership, or nothing.
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(!userService.authed) return null;
-            var eventMembership = eventMembershipService.eventMemberships[event.url];
-            if(eventMembership && eventMembership.isFetched()) return eventMembership;
-            return eventMembershipService.fetchMembership(event)
-            .then(function(fetchedMembership) {
-                eventMembershipService.eventMemberships[event.url] = fetchedMembership;
-                return fetchedMembership;
-            });
-        });
+        if(!userService.authed) return null;
+        let eventMembership = eventMembershipService.eventMemberships[event.url];
+        if(eventMembership && eventMembership.isFetched()) return eventMembership;
+        
+        let fetchedMembership = await eventMembershipService.fetchMembership(event);
+        eventMembershipService.eventMemberships[event.url] = fetchedMembership;
+        return fetchedMembership;
     };
-    eventMembershipService.getEventMemberships = function() {
+    eventMembershipService.getEventMemberships = async function() {
         //Returns all eventMemberships
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(!userService.authed) return null;
-            if(eventMembershipService.initialFetch) return eventMembershipService.eventMemberships;
-            return eventMembershipService.fetchMemberships()
-            .then(function(fetchedMemberships) {
-                for (var fetchedMembership of fetchedMemberships) {
-                    eventMembershipService.eventMemberships[fetchedMembership.eventURL] = fetchedMembership;
-                }
-                eventMembershipService.initialFetch = true;
-                return eventMembershipService.eventMemberships;
-            });
-        });
+        if(!userService.authed) return null;
+        if(eventMembershipService.initialFetch) return eventMembershipService.eventMemberships;
+        let fetchedMemberships = await eventMembershipService.fetchMemberships();
+        for (let fetchedMembership of fetchedMemberships) {
+            eventMembershipService.eventMemberships[fetchedMembership.eventURL] = fetchedMembership;
+        }
+        eventMembershipService.initialFetch = true;
+        return eventMembershipService.eventMemberships;
     }
     eventMembershipService.retrieveEventMembership = function(eventURL) {
         return eventMembershipService.eventMemberships[eventURL];
@@ -1024,7 +977,6 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
 
     userService.on("login", function() {
         //TODO: Fetch and store user's eventMemberships
-        console.log("asdf");
     });
     userService.on("logout", function() {
         //Delete user's eventMemberships
@@ -1058,25 +1010,19 @@ app.factory('postVoteService', function(jventService, userService) {
             this._.votes = {};
             this.fetchAllVotes();
 
-            var _this = this;
-            userService.on("login", function() {
+            userService.on("login", ()=> {
                 console.log("login")
             })
-            userService.on("logout", function() {
-                _this.flushVotes();
+            userService.on("logout", ()=> {
+                this.flushVotes();
             })
         }
-        fetchAllVotes() {
-            var _this = this;
-            return Q.fcall(function() {
-                return jventService.getPostVotes();
-            })
-            .then(function(rawPostVoteArray) {
-                for (var rawPostVote of rawPostVoteArray) {
-                    var newPostVote = new PostVote(rawPostVote);
-                    _this._.votes[newPostVote.post] = newPostVote;
-                }
-            });
+        async fetchAllVotes() {
+            let rawPostVoteArray = await jventService.getPostVotes();
+            for (let rawPostVote of rawPostVoteArray) {
+                let newPostVote = new PostVote(rawPostVote);
+                this._.votes[newPostVote.post] = newPostVote;
+            }
         }
         flushVotes() {
             this._.votes = {};
@@ -1106,19 +1052,12 @@ app.factory('userListService', function(contextEvent, jventService, $q) {
     var setUserList = function(userList) {
         userListService.userList = userList;
     };
-    userListService.getUserList = function() {
-        return $q(function(resolve, reject) {
-            if(queryChange() || !fresh()) { // OR check if the query result has changed
-                return jventService.getUserList()
-                .then(function(userList) {
-                    setUserList(userList);
-                    return resolve(userList);
-                });
-            }
-            else {
-                return resolve(userListService.userList);
-            }
-        });
+    userListService.getUserList = async function() {
+        if(queryChange() || !fresh()) { // OR check if the query result has changed
+            let userList = await jventService.getUserList()
+            setUserList(userList);
+        }
+        return userListService.userList;
     };
     return userListService;
 });
@@ -1143,8 +1082,8 @@ app.factory('postListService', function(Post, contextEvent, postVoteService, jve
         return (Date.now() - lastUpdate) < postListService.cacheTime;
     };
     var setPostList = function(rawPostList, event) {
-        var newPostList = Post.deserializeArray(rawPostList);
-        for (var post of newPostList) {
+        let newPostList = Post.deserializeArray(rawPostList);
+        for (let post of newPostList) {
             post.on("vote", function(direction) {
                 return jventService.postVote(contextEvent.event.url, this.url, direction);
             });
@@ -1158,20 +1097,13 @@ app.factory('postListService', function(Post, contextEvent, postVoteService, jve
     var requiresUpdate = function() {
         return(queryChange() || !fresh());
     };
-    postListService.getPostList = function(eventURL) {
-        return contextEvent.getEvent(eventURL)
-        .then(function(event) {
-            if(requiresUpdate() || eventChange(event)) {
-                return jventService.getPosts(eventURL)
-                .then(function(rawPostList) {
-                    setPostList(rawPostList, event);
-                    return;
-                });
-            }
-        })
-        .then(function() {
-            return({postList: postListService.postList});
-        });
+    postListService.getPostList = async function(eventURL) {
+        let event = await contextEvent.getEvent(eventURL);
+        if(requiresUpdate() || eventChange(event)) {
+            let rawPostList = await jventService.getPosts(eventURL);
+            setPostList(rawPostList, event);
+        }
+        return({postList: postListService.postList});
     };
 
     return postListService;
