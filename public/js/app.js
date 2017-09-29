@@ -261,7 +261,7 @@ app.service('dialogService', function() {
 });
 
 
-app.factory('userService', function($rootScope, urlService, $http, $q) {
+app.factory('userService', function($rootScope, urlService, $http) {
     var obj = {};
     obj.authed = false;
     obj.authStore = null;
@@ -269,7 +269,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj._events = {};
     var logoutCallbacks = [];
     var getAuthStore = function() {
-        var storage = [window.localStorage, window.sessionStorage];
+        let storage = [window.localStorage, window.sessionStorage];
         for(var i = 0; i<storage.length;i++) {
             if(storage[i].token) {
                 return storage[i];
@@ -298,17 +298,15 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         console.log("Deleting Auth Header");
         $http.defaults.headers.common['Authorization'] = '';
     };
-    var getTokenFromServer = function(creds) {
-        var req = {
+    var getTokenFromServer = async function(creds) {
+        let req = {
             method: 'POST',
             url: urlService.userAuthenticate(),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            data: 'email='+creds.email+'&password='+creds.password,
+            data: `email=${creds.email}&password=${creds.password}`,
         };
-        return $http(req)
-        .then(function(data) {
-            return data.data.token;
-        });
+        let response = await $http(req);
+        return response.data.token;
     };
     var loadUser = function() {
         console.log("Searching for User");
@@ -328,9 +326,9 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj.isAuthed = function() {
         return(obj.authed);
     };
-    obj.login = function(creds, options) {
-        return getTokenFromServer(creds)
-        .then(function(token) {
+    obj.login = async function(creds, options) {
+        try {
+            let token = await getTokenFromServer(creds)
             setAuthStore(options.remainSignedIn);
             storeToken(token);
             setAuthHeader(token);
@@ -338,10 +336,10 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
             $rootScope.authed = true;
             obj.authed = true;
             return true;
-        })
-        .catch(function(error) {
+        }
+        catch (error) {
             return false;
-        });
+        }
     };
     obj.logout = function() {
         obj.authStore.removeItem("token");
@@ -351,23 +349,21 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         obj.invoke("logout");
         obj.authed = false;
     };
-    obj.register = function(user) {
-        var req = {
+    obj.register = async function(user) {
+        let req = {
             method: 'POST',
             url: urlService.userSignUp(),
             data: {
                 user: user
             }
         };
-        return $http(req)
-        .then(function(data) {
-            if(data.status == 201) {
-                return {success: true, err: null};
-            }
-        });
+        let response = await $http(req);
+        if(response.status == 201) {
+            return {success: true, err: null};
+        }
     };
-    obj.changePassword = function(oldpassword, newpassword) {
-        var req = {
+    obj.changePassword = async function(oldpassword, newpassword) {
+        let req = {
             method: 'POST',
             url: urlService.userMeChangePassword(),
             headers: {
@@ -375,18 +371,16 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
                 'newpassword': newpassword
             }
         };
-        return $http(req)
-        .then(function(data) {
-            console.log(data.data); //TODO: write handler
-        });
+        let response = await $http(req);
+        console.log(response.data); //TODO: write handler
     };
     obj.user = function() {
         return "Username here";
     };
     obj.validPassword = function(password, repassword) {
-        if(!password){return false;}
-        if(password == repassword){return(true);}
-        else {return(false);}
+        if(!password) return false;
+        if(password == repassword) return(true);
+        return(false);
     };
     loadUser();
     return(obj);
@@ -1591,20 +1585,14 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
 
     $scope.joinPending = false;
-    $scope.join = function() {
+    $scope.join = async function() {
         //Make sure request can be made
         $scope.joinPending = true;
-        contextEvent.event.join()
-        .then(function() {
-            //Redirect to content upon success
-            console.log("Joined event");
-        })
-        .catch(function(err) {
-            //err
-        })
-        .finally(function() {
-            $scope.joinPending = false;
-        });
+        await contextEvent.event.join()
+        //Redirect to content upon success
+        console.log("Joined event");
+        $scope.joinPending = false;
+        $scope.$digest();
     };
     $scope.view = function() {
         navService.posts(contextEvent.event.url);
