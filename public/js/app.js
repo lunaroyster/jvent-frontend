@@ -392,182 +392,133 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     return(obj);
 });
 
-app.service('jventService', function(urlService, $http, $q) {
-    this.createEvent = function(event) {
-        var url = urlService.event();
-        var data = {
+app.service('jventService', function(urlService, $http) {
+    this.createEvent = async function(event) {
+        let url = urlService.event();
+        let data = {
             event: event
         };
-        return $http.post(url, data)
-        .then(function(response) {
-            var eventURL = response.data.event.url;
-            return eventURL;
-        },
-        function(response) {
-            throw response.data; //HACK: Does this even make sense?
-        });
+        let response = await $http.post(url, data);
+        return response.data.event.url;
     };
-    this.setEventBackground = function(media, eventURL) {
-        var url = urlService.eventSettingsBackground(eventURL);
-        var data = {
+    this.setEventBackground = async function(media, eventURL) {
+        let url = urlService.eventSettingsBackground(eventURL);
+        let data = {
             media: media
         };
-        return $http.post(url, data)
-        .then(function(response) {
-            return;
-            // TODO
-        },
-        function(response) {
-            // TODO
-        });
-    }
-    this.getEvents = function() {
-        // $http.get('debugjson/events.json').then(function (data) {
-        return $http.get(urlService.event())
-        .then(function (data) {
-            return data.data.events;
-        });
+        let response = await $http.post(url, data);
     };
-    this.getEvent = function(eventURL, moderator) {
+    this.getEvents = async function() {
+        // $http.get('debugjson/events.json')
+        let data = await $http.get(urlService.event());
+        return data.data.events;
+    };
+    this.getEvent = async function(eventURL, moderator) {
         moderator = moderator ? 1 : 0;
-        var req = {
+        let req = {
             method: 'GET',
             url: urlService.eventURL(eventURL),
             headers: {
                 'Moderator': moderator
             }
         };
-        return $http(req)
-        .then(function (data) {
-            return data.data.event;
-        });
+        let data = await $http(req);
+        return data.data.event;
     };
-    this.joinEvent = function(eventURL) {
-        var url = urlService.eventJoin(eventURL);
-        return $http.patch(url)
-        .then(function(response) {
-            //Response
-            return;
-        },
-        function(response) {
-            throw Error(); //TODO: Describe error
-        });
+    this.joinEvent = async function(eventURL) {
+        let url = urlService.eventJoin(eventURL);
+        return await $http.patch(url);
     };
-    this.createPost = function(media, post, eventURL) {
-        var url = urlService.post(eventURL);
-        var data = {
+    this.createPost = async function(media, post, eventURL) {
+        let url = urlService.post(eventURL);
+        let data = {
             post: post,
         };
-        if(!!media) {
-            data.media = media;
+        if(!!media) data.media = media;
+        let response = await $http.post(url, data);
+        let res = {};
+        res.postURL = response.data.post.url;
+        if(response.data.media) {
+            res.mediaURL = response.data.media.url;
         }
-        return $http.post(url, data)
-        .then(function(response){
-            var res = {};
-            res.postURL = response.data.post.url;
-            if(response.data.media) {
-                res.mediaURL = response.data.media.url;
-            }
-            return res;
-        });
+        return res;
     };
-    this.getPosts = function(eventURL) {
-        var req = {
+    this.getPosts = async function(eventURL) {
+        let req = {
             method: 'GET',
             url: urlService.postRanked(eventURL, "hot"), //TODO: Temporary
         };
-        return $http(req)
-        .then(function(data) {
-            return data.data.posts;
-        });
+        let response = await $http(req);
+        return response.data.posts;
     };
-    this.getPost = function(postURL, eventURL) {
-        var req = {
+    this.getPost = async function(postURL, eventURL) {
+        let req = {
             method: 'GET',
             url: urlService.postURL(eventURL, postURL)
         };
-        return $http(req)
-        .then(function(data) {
-            return data.data.post;
-        });
+        let response = await $http(req);
+        return response.data.post;
     };
-    this.createMedia = function(media, eventURL) {
-        var url = urlService.media(eventURL);
-        var data = {
+    this.createMedia = async function(media, eventURL) {
+        let url = urlService.media(eventURL);
+        let data = {
             media: media
         };
-        return $http.post(url, data)
-        .then(function(response) {
-            var mediaURL = response.data.media.url;
-            return mediaURL;
-        });
+        let response = await $http.post(url, data);
+        return response.data.media.url;
     };
-    this.postVote = function(eventURL, postURL, direction) {
-        var url = urlService.postURLVote(eventURL, postURL);
-        var data = {
+    this.postVote = async function(eventURL, postURL, direction) {
+        let url = urlService.postURLVote(eventURL, postURL);
+        let data = {
             direction: direction
         };
-        return $http.patch(url, data)
-        .then(function(response) {
-            // TODO
-        });
+        let response = await $http.patch(url, data);
     };
-    this.getUserList = function(eventURL, role) {
-        var url = urlService.eventUsersRole(eventURL, role);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
+    this.getUserList = async function(eventURL, role) {
+        let url = urlService.eventUsersRole(eventURL, role);
+        let response = await $http.get(url);
+        return response.data;
     };
-    this.getPostVotes = function(eventURL) {
-        var url = urlService.userMePostVotes();
+    this.getPostVotes = async function(eventURL) {
+        let url = urlService.userMePostVotes();
         if(eventURL) url = urlService.userMeEventPostVotes(eventURL);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data.votes;
-        });
+        let response = await $http.get(url);
+        return response.data.votes;
     };
-    this.getEventMemberships = function() {
-        var url = urlService.userEvents();
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
+    this.getEventMemberships = async function() {
+        let url = urlService.userEvents();
+        let response = await $http.get(url);
+        return response.data;
     };
-    this.getEventMembershipByEventID = function(eventID) {
-        var url = urlService.userEventID(eventID);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
-    }
-    this.getEventMembershipsByRole = function(role) {
-        var url = urlService.userEventsRole(role);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
+    this.getEventMembershipByEventID = async function(eventID) {
+        let url = urlService.userEventID(eventID);
+        let response = await $http.get(url);
+        return response.data;
     };
-    this.getImageUploadToken = function(fileName, fileType) {
-        var url = urlService.serviceMediaImageToken();
-        return $http({
+    this.getEventMembershipsByRole = async function(role) {
+        let url = urlService.userEventsRole(role);
+        let response = await $http.get(url);
+        return response.data;
+    };
+    this.getImageUploadToken = async function(fileName, fileType) {
+        let url = urlService.serviceMediaImageToken();
+        let req = {
             url: url,
             method: "GET",
             params: {
                 "fileName": fileName,
                 "fileType": fileType
             }
-        })
-        .then(function(response) {
-            return response.data;
-        });
+        };
+        let response = await $http(req);
+        return response.data;
     };
 });
 
-app.service('awsService', function($http, $q) {
-    this.uploadImageToS3 = function(image, signedRequestURL) {
-        var blob = new Blob([image], {type: image.type});
-        var config = {
+app.service('awsService', function($http) {
+    this.uploadImageToS3 = async function(image, signedRequestURL) {
+        let blob = new Blob([image], {type: image.type});
+        let config = {
             url: signedRequestURL,
             method: 'PUT',
             headers: {
@@ -578,11 +529,8 @@ app.service('awsService', function($http, $q) {
             data: blob,
             // transformRequest: angular.identity
         };
-        return $http(config)
-        .then(function(response) {
-            //TODO
-            return response.data;
-        });
+        let response = await $http(config);
+        return response.data;
     };
 });
 
@@ -600,8 +548,8 @@ app.service('mediaService', function($http) {
               }
             };
         }; */
-        var requestFunction = function() {
-            var config = {
+        var requestFunction = async function() {
+            let config = {
                 method: 'GET',
                 url: media.link,
                 responseType: 'blob',
@@ -609,19 +557,17 @@ app.service('mediaService', function($http) {
                    'Authorization': undefined
                  },
             };
-            return $http(config)
-            .then(function(response) {
-                var blob = new Blob([response.data], {type: response.headers('content-type')})
-                return URL.createObjectURL(blob);
-            });
+            let response = await $http(config);
+            let blob = new Blob([response.data], {type: response.headers('content-type')});
+            return URL.createObjectURL(blob);
         };
         var getMediaBlob = function() {
             return requestFunction();
-        }
+        };
         return {
             getMediaBlob: getMediaBlob
-        }
-    }
+        };
+    };
 });
 
 //  Types {
@@ -1620,7 +1566,7 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, di
             function(error) {
                 dialogService.paramMsgArrayError(error)
             })
-            .finally(function() {
+            .then(function() {
                 $scope.pendingRequest = false;
             });
         }
