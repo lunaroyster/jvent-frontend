@@ -14,7 +14,7 @@ var on = function(name, handler) {
     else {
         this._events[name] = [handler];
     }
-}
+};
 var invoke = function(name, args) {
     var res = [];
     if(!this._events.hasOwnProperty(name)) return;
@@ -23,7 +23,7 @@ var invoke = function(name, args) {
         res.push(fn.apply(this, args));
     }
     return res;
-}
+};
 
 var app = angular.module("jvent", ['ngRoute', 'ngRaven']);
 // var app = angular.module("jvent", ['ngRoute']);
@@ -137,158 +137,65 @@ app.config(['$routeProvider', function($routeProvider) {
 
 //  Location Services {
 app.service('urlService', function() {
-    var apiURL = 'api/';
-    var apiVersion = 'v0/';
+    let apiURL = 'api/';
+    let apiVersion = 'v0/';
 
-    this.api = function() {
-        return(apiURL+apiVersion);
-    };
+    this.api = ()=> `${apiURL}${apiVersion}`;
 
-    this.event = function() {
-        return(this.api() + 'event/');
-    };
-    this.eventURL = function(eventURL) {
-        return(this.event() + eventURL + '/');
-    };
-    this.eventJoin = function(eventURL) {
-        return(this.eventURL(eventURL) + 'join/');
-    };
-    this.eventUsers = function(eventURL) {
-        return(this.eventURL(eventURL) + 'users/');
-    };
-    this.eventSettings = function(eventURL) {
-        return(this.eventURL(eventURL) + 'settings/');
-    };
-    this.eventSettingsBackground = function(eventURL) {
-        return(this.eventSettings(eventURL) + 'eventBackground/');
-    };
-    this.eventUsersRole = function(eventURL, role) {
-        return(this.eventUsers(eventURL) + role + '/');
-    };
+    this.event = ()=> `${this.api()}event/`;
+    this.eventURL = (eventURL)=> `${this.event()}${eventURL}/`;
+    this.eventJoin = (eventURL)=> `${this.eventURL(eventURL)}join/`;
+    this.eventUsers = (eventURL)=> `${this.eventURL(eventURL)}users/`;
+    this.eventSettings = (eventURL)=> `${this.eventURL(eventURL)}settings/`;
+    this.eventSettingsBackground = (eventURL)=> `${this.eventSettings(eventURL)}eventBackground/`;
+    this.eventUsersRole = (eventURL, role)=> `${this.eventUsers(eventURL)}${role}/`;
 
-    this.post = function(eventURL) {
-        return(this.eventURL(eventURL) + 'post/');
-    };
-    this.postRanked = function(eventURL, rank) {
-        return(this.post(eventURL) + '?rank=' + rank);
-    };
-    this.postURL = function(eventURL, postURL) {
-        return(this.post(eventURL) + postURL + '/');
-    };
-    this.postURLVote = function(eventURL, postURL) {
-        return(this.postURL(eventURL, postURL) + 'vote/');
-    };
+    this.post = (eventURL)=> `${this.eventURL(eventURL)}post/`;
+    this.postRanked = (eventURL, rank)=> `${this.post(eventURL)}?rank=${rank}`;
+    this.postURL = (eventURL, postURL)=> `${this.post(eventURL)}${postURL}/`;
+    this.postURLVote = (eventURL, postURL)=> `${this.postURL(eventURL, postURL)}vote/`;
 
-    this.media = function(eventURL) {
-        return(this.eventURL(eventURL) + 'media/');
-    };
+    this.media = (eventURL)=> `${this.eventURL(eventURL)}media/`;
 
-    this.comment = function(eventURL, postURL) {
-        return(this.postURL(eventURL, postURL) + 'comment/');
-    };
-    this.commentURL = function(eventURL, postURL, commentURL) {
-        return(this.comment(eventURL, postURL) + commentURL + '/');
-    };
+    this.comment = (eventURL, postURL)=> `${this.postURL(eventURL, postURL)}comment/`;
+    this.commentURL = (eventURL, postURL, commentURL)=> `${this.comment(eventURL, postURL)}${commentURL}/`;
 
-    this.user = function() {
-        return(this.api() + 'user/');
-    };
+    this.user = ()=> `${this.api()}user/`;
+    this.userMe = ()=> `${this.user()}me/`;
+    this.userMeevent = ()=> `${this.userMe()}event/`;
+    this.userMeEventRole = (role)=> `${this.userMeevent()}role/${role}/`;
+    this.userMeEventID = (eventID)=> `${this.userMeevent()}${eventID}/`;
+    this.userMeEventPost = (eventID)=> `${this.userMeEventID(eventID)}post/`;
+    this.userMeEventPostVotes = (eventID)=> `${this.userMeEventPost(eventID)}votes/`;
+    this.userMeEventMedia = (eventID)=> `${this.userMeEventID(eventID)}media/`;
+    this.userMePost = ()=> `${this.userMe()}post/`;
+    this.userMePostVotes = ()=> `${this.userMePost()}votes/`;
+    this.userMeMedia = ()=> `${this.userMe()}media/`;
+    this.userMeChangePassword = ()=> `${this.userMe()}changepassword/`;
 
-    this.userMe = function() {
-        return(this.user() + 'me/');
-    };
-    this.userMeevent = function() {
-        return(this.userMe() + 'event/');
-    };
-    this.userMeEventRole = function(role) {
-        return(this.userMeevent() + 'role/' + role + '/');
-    };
-    this.userMeEventID = function(eventID) {
-        return(this.userMeevent() + eventID + '/');
-    };
-    this.userMeEventPost = function(eventID) {
-        return(this.userMeEventID(eventID) + 'post/');
-    };
-    this.userMeEventPostVotes = function(eventID) {
-        return(this.userMeEventPost(eventID) + 'votes/');
-    };
-    this.userMeEventMedia = function(eventID) {
-        return(this.userMeEventID(eventID) + 'media/');
-    };
-    this.userMePost = function() {
-        return(this.userMe() + 'post/');
-    };
-    this.userMePostVotes = function() {
-        return(this.userMePost() + 'votes/');
-    };
-    this.userMeMedia = function() {
-        return(this.userMe() + 'media/');
-    };
-    this.userMeChangePassword = function() {
-        return(this.userMe() + 'changepassword/');
-    };
-
-    this.userEvents = function() {
-        return(this.user() + 'events/');
-    };
-    this.userEventID = function(eventID) {
-        return(this.userEvents() + eventID + '/');
-    }
-    this.userEventsRole = function(role) {
-        return(this.userEvents() + 'role/' + role + '/');
-    };
-    this.userSignUp = function() {
-        return(this.user() + 'signup/');
-    };
-    this.userAuthenticate = function() {
-        return(this.user() + 'authenticate/');
-    };
+    this.userEvents = ()=> `${this.user()}events/`;
+    this.userEventID = (eventID)=> `${this.userEvents()}${eventID}/`;
+    this.userEventsRole = (role)=> `${this.userEvents()}role/${role}/`;
+    this.userSignUp = ()=> `${this.user()}signup/`;
+    this.userAuthenticate = ()=> `${this.user()}authenticate/`;
     
-    this.service = function() {
-        return(this.api() + 'service/');
-    };
-    this.serviceMedia = function() {
-        return(this.service() + 'media/');
-    };
-    this.serviceMediaImage = function() {
-        return(this.serviceMedia() + 'image/');
-    };
-    this.serviceMediaImageToken = function() {
-        return(this.serviceMediaImage() + 'token/');
-    };
+    this.service = ()=> `${this.api()}service/`;
+    this.serviceMedia = ()=> `${this.service()}media/`;
+    this.serviceMediaImage = ()=> `${this.serviceMedia()}image/`;
+    this.serviceMediaImageToken = ()=> `${this.serviceMediaImage()}token/`;
 });
 
 app.service('navService', function($location) {
-    this.home = function() {
-        $location.path('/');
-    };
-    this.events = function() {
-        $location.path('/events');
-    };
-    this.event = function(eventURL) {
-        $location.path('/event/' + eventURL);
-    };
-    this.posts = function(eventURL) {
-        $location.path('/event/' + eventURL + '/posts');
-    };
-    this.post = function(eventURL, postURL) {
-        $location.path('/event/' + eventURL + '/post/' + postURL);
-    };
-    this.newEvent = function() {
-        $location.path('/event/new');
-    };
-    this.newPost = function(eventURL) {
-        $location.path('/event/' + eventURL + '/post/new');
-    };
-    this.login = function() {
-        $location.path('/login');
-    };
-    this.logout = function() {
-        $location.path('/logout');
-    };
-    this.signup = function() {
-        $location.path('/signup');
-    };
+    this.home = ()=> $location.path(`/`);
+    this.events = ()=> $location.path(`/events`);
+    this.event = (eventURL)=> $location.path(`/event/${eventURL}`);
+    this.posts = (eventURL)=> $location.path(`/event/${eventURL}/posts`);
+    this.post = (eventURL, postURL)=> $location.path(`/event/${eventURL}/post/${postURL}`);
+    this.newEvent = ()=> $location.path(`/event/new`);
+    this.newPost = (eventURL)=> $location.path(`/event/${eventURL}/post/new`);
+    this.login = ()=> $location.path(`/login`);
+    this.logout = ()=> $location.path(`/logout`);
+    this.signup = ()=> $location.path(`/signup`);
 });
 
 app.service('validationService', function() {
