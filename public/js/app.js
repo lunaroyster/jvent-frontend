@@ -575,48 +575,39 @@ app.service('Media', function($http, $q) {
     var Media = class {
         constructor(media) {
             this._events = {};
-            this.on = on.bind(this)
-            this.invoke = invoke.bind(this)
+            this.on = on.bind(this);
+            this.invoke = invoke.bind(this);
             this._time = {};
             this._ = media;
             this._time.fetch = Date.now();
             this.invoke("load");
         }
 
-        getAsBlob() {
-            var _this = this;
-            return $q((resolve, reject) => {resolve()})
-            .then(function() {
-                if(_this._blobURL) return;
-                var config = {
-                    method: 'GET',
-                    url: _this.link,
-                    responseType: 'blob',
-                    headers: {
-                       'Authorization': undefined
-                     },
-                };
-                return $http(config)
-                .then(Media.blobifyResponseData)
-                .then(function(blobURL) {
-                    _this._blobURL = blobURL;
-                    _this.invoke("blobURL-change", [blobURL]);
-                });
-            })
-            .then(function() {
-                return _this._blobURL;
-            });
+        async getAsBlob() {
+            if(this._blobURL) return this._blobURL;
+            let config = {
+                method: 'GET',
+                url: this.link,
+                responseType: 'blob',
+                headers: {
+                   'Authorization': undefined
+                 },
+            };
+            let response = await $http(config);
+            this._blobURL = Media.blobifyResponseData(response);
+            this.invoke("blobURL-change", [this._blobURL]);
+            return this._blobURL;
         }
 
         static blobifyResponseData(response) {
-            var blob = new Blob([response.data], {type: response.headers('content-type')})
-            var blobURL = URL.createObjectURL(blob);
+            let blob = new Blob([response.data], {type: response.headers('content-type')});
+            let blobURL = URL.createObjectURL(blob);
             return blobURL;
         }
 
         get link() {
             //TODO: find a more elegant solution
-            console.warn("HACK: Changed link protocol arbitrarily")
+            console.warn("HACK: Changed link protocol arbitrarily");
             if(window.location.protocol=="https:") {
                 return this._.link.replace("http:", "https:");
             }
@@ -631,8 +622,8 @@ app.service('Event', function(jventService, $q) {
     var Event = class {
         constructor(event) {
             this._events = {};
-            this.on = on.bind(this)
-            this.invoke = invoke.bind(this)
+            this.on = on.bind(this);
+            this.invoke = invoke.bind(this);
             this._time = {};
             this._ = event;
             this._time.fetch = Date.now();
@@ -640,15 +631,15 @@ app.service('Event', function(jventService, $q) {
         }
 
         static deserializeArray(rawEventArray) {
-            var EventObjectArray = [];
-            for (var event of rawEventArray) {
+            let EventObjectArray = [];
+            for (let event of rawEventArray) {
                 EventObjectArray.push(new Event(event));
             }
             return EventObjectArray;
         }
 
         get id() {
-            return this._._id
+            return this._._id;
         }
         get url() {
             return this._.url;
@@ -681,9 +672,9 @@ app.service('Event', function(jventService, $q) {
             this._eventMembership = value;
         }
 
-        join() {
-            var promises = this.invoke("join");
-            return $q.all(promises);
+        async join() {
+            let promises = this.invoke("join");
+            return await Promise.all(promises);
         }
 
     };
@@ -707,15 +698,13 @@ app.service('Post', function(jventService, validationService, $q) {
             this.invoke("load");
         }
 
-        static fromPostURL(postURL, eventURL) {
-            return jventService.getPost(postURL, eventURL)
-            .then(function(post) {
-                return new Post(post);
-            });
+        static async fromPostURL(postURL, eventURL) {
+            let post = await jventService.getPost(postURL, eventURL);
+            return new Post(post);
         }
         static deserializeArray(rawPostArray) {
-            var PostObjectArray = [];
-            for (var post of rawPostArray) {
+            let PostObjectArray = [];
+            for (let post of rawPostArray) {
                 PostObjectArray.push(new Post(post));
             }
             return PostObjectArray;
@@ -759,19 +748,19 @@ app.service('Post', function(jventService, validationService, $q) {
             }
         }
 
-        comment(comment) {
-            var promises = this.invoke("comment"); //Comment as eventArgs
-            return $q.all(promises);
+        async comment(comment) {
+            let promises = this.invoke("comment"); //Comment as eventArgs
+            return await Promise.all(promises);
         }
 
         static getPost() {
 
         }
-    }
+    };
     return Post;
 });
 
-app.service('EventMembership', function(jventService, $q) {
+app.service('EventMembership', function(jventService) {
     var EventMembership = class {
         constructor(eventMembership) {
             //initialize post
@@ -799,8 +788,8 @@ app.service('EventMembership', function(jventService, $q) {
         }
 
         static deserializeArray(rawEventMembershipArray) {
-            var EventMembershipObjectArray = [];
-            for (var eventMembership of rawEventMembershipArray) {
+            let EventMembershipObjectArray = [];
+            for (let eventMembership of rawEventMembershipArray) {
                 EventMembershipObjectArray.push(new EventMembership(eventMembership));
             }
             return EventMembershipObjectArray;
