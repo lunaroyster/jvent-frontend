@@ -201,37 +201,23 @@ app.service('navService', function($location) {
 app.service('validationService', function() {
     return function(value) {
         return {
-            isLink: function() {
-                var linkRegex = new RegExp(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/);
+            isLink: ()=> {
+                let linkRegex = new RegExp(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/);
                 return linkRegex.test(value);
             },
-            isEmail: function() {
-                var emailRegex = new RegExp(/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/);
+            isEmail: ()=> {
+                let emailRegex = new RegExp(/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/);
                 return emailRegex.test(value);
             },
-            isVote: function() {
-                return(value===-1||value===0||value===1);
-            },
-            inRange: function(min, max) {
-                return(value>=min && value<=max);
-            },
-            min: function(min) {
-                return(value>=min);
-            },
-            max: function(max){
-                return(value<=max);
-            },
-            isIn: function(array) {
-                return array.indexOf(value)!=-1;
-            },
-            isOfType: function(type) {
-                return typeof(value)==type;
-            },
-            isOfObjectType: function(type) {
-                return(value.constructor.name==type);
-            }
-        }
-    }
+            isVote: ()=> (value===-1||value===0||value===1),
+            inRange: (min, max)=> (value>=min && value<=max),
+            min: (min)=> (value>=min),
+            max: (max)=> (value<=max),
+            isIn: (array)=> (array.indexOf(value)!=-1),
+            isOfType: (type)=> (typeof(value)==type),
+            isOfObjectType: (type)=> (value.constructor.name==type)
+        };
+    };
 });
 //  }
 
@@ -259,20 +245,20 @@ app.service('timeService', function() {
 
 app.service('dialogService', function() {
     this.networkError = function(error) {
-        Materialize.toast(error.status + ' ' + error.statusText, 4000);
+        Materialize.toast(`${error.status} ${error.statusText}`, 4000);
     };
     this.paramMsgArrayError = function(error) {
-        for (var err of error) {
-            Materialize.toast(err.param + ' ' + err.msg, 4000);
+        for (let err of error) {
+            Materialize.toast(`${err.param} ${err.msg}`, 4000);
         }
     };
     this.genericError = function(error) {
-        Materialize.toast(error.name + ': ' + error.message);
+        Materialize.toast(`${error.name}: ${error.message}`);
     };
     this.message = function(message) {
         Materialize.toast(message);
-    }
-})
+    };
+});
 
 
 app.factory('userService', function($rootScope, urlService, $http, $q) {
