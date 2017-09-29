@@ -1111,7 +1111,7 @@ app.factory('postListService', function(Post, contextEvent, postVoteService, jve
 //  }
 
 //  Context Providers {
-app.factory('contextEvent', function(eventMembershipService, userService, Event, jventService, $q) {
+app.factory('contextEvent', function(eventMembershipService, userService, Event, jventService) {
     var contextEvent = {};
     contextEvent.event = {};
     contextEvent.cacheTime = 60000;
@@ -1120,48 +1120,33 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     var fresh = function() {
         return (Date.now() - lastUpdate) < contextEvent.cacheTime;
     };
-    var setEvent = function(event) {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            event.on("join", function() {
-                console.log("Joining event");
-                return jventService.joinEvent(event.url);
-            });
-            userService.on("logout", function() {
-                event.eventMembership = null;
-            });
-            return eventMembershipService.getEventMembership(event)
-            .then(function(eventMembership) {
-                event.eventMembership = eventMembership;
-                contextEvent.event = event;
-                lastUpdate = Date.now();
-                contextEvent.loadedEvent = true;
-                return event;
-            });
-        })
+    var setEvent = async function(event) {
+        event.on("join", function() {
+            console.log("Joining event");
+            return jventService.joinEvent(event.url);
+        });
+        userService.on("logout", function() {
+            event.eventMembership = null;
+        });
+        event.eventMembership = await eventMembershipService.getEventMembership(event);
+        contextEvent.event = event;
+        contextEvent.loadedEvent = true;
+        lastUpdate = Date.now();
+        return event;
     };
     var requiresUpdate = function(eventURL) {
         return(eventURL!=contextEvent.event.url||!fresh());
     };
-    contextEvent.getEvent = function(eventURL) {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            var eventMembership = eventMembershipService.retrieveEventMembership(eventURL);
-            if(!eventMembership) return false;
-            return eventMembership.hasRole("moderator");
-        })
-        .then(function(result) {
-            if(requiresUpdate(eventURL)) {
-                return jventService.getEvent(eventURL, result)
-                .then(function(rawEvent) {
-                    return new Event(rawEvent);
-                })
-                .then(function(event) {
-                    return setEvent(event);
-                });
-            }
-            return contextEvent.event;
-        });
+    contextEvent.getEvent = async function(eventURL) {
+        let eventMembership = eventMembershipService.retrieveEventMembership(eventURL);
+        let result = false;
+        if(eventMembership) result = await eventMembership.hasRole("moderator");
+        if(requiresUpdate(eventURL)) {
+            let rawEvent = await jventService.getEvent(eventURL, result);
+            let event = new Event(rawEvent);
+            await setEvent(event);
+        }
+        return contextEvent.event;
     };
     // contextEvent.join = function() {
     //     return jventService.joinEvent(contextEvent.event.url);
@@ -1199,29 +1184,17 @@ app.factory('contextPost', function(contextEvent, mediaService, postVoteService,
     var requiresUpdate = function(postURL) {
         return(postURL!=contextPost.post.url||!fresh());
     }
-    contextPost.getPost = function(postURL) {
+    contextPost.getPost = async function(postURL) {
         //Verify membership with contextEvent
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(requiresUpdate(postURL)) {
-                // return Post.fromPostURL(postURL, contextEvent.event.url)
-                return jventService.getPost(postURL, contextEvent.event.url)
-                .then(function(rawPost) {
-                    return new Post(rawPost);
-                })
-                .then(function(post) {
-                    setPost(post);
-                    return post;
-                });
-            }
-            return contextPost.post;
-        })
-        .then(function(post) {
-            var response = {post: post};
-            if(!post.media || !post.media.media) return response;
-            response.mediaPromise = post.media.media.getAsBlob();
-            return response;
-        });
+        if(requiresUpdate(postURL)) {
+            let rawPost = await jventService.getPost(postURL, contextEvent.event.url);
+            setPost(new Post(rawPost));
+        }
+        let post = contextPost.post;
+        let response = {post: post};
+        if(!post.media || !post.media.media) return response;
+        response.mediaPromise = post.media.media.getAsBlob();
+        return response;
     };
     return contextPost;
 });
@@ -1505,6 +1478,7 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
     $scope.loadEvent = function(event) {
         $scope.event = event;
         $scope.loaded = true;
+        $scope.$digest();
     };
     $scope.refresh = function() {
         return contextEvent.getEvent($routeParams.eventURL)
@@ -1617,6 +1591,7 @@ app.controller('postListCtrl', function($scope, $routeParams, contextEvent, post
     $scope.loadPosts = function(response) {
         $scope.postList = response.postList;
         $scope.loaded = true;
+        $scope.$digest();
         //TODO: MEDIA?
     };
 
