@@ -1209,34 +1209,20 @@ app.factory('newEventService', function(userService, validationService, jventSer
         name: userService.user()
     }; //Is this even required?
     
-    var publishImage = function(image) {
-        return jventService.getImageUploadToken(image.name, image.type)
-        .then(function(response) {
-            return awsService.uploadImageToS3(image, response.signedRequest)
-            .then(function() {
-                return response.url;
-            });
-        })
+    var publishImage = async function(image) {
+        let response = await jventService.getImageUploadToken(image.name, image.type);
+        await awsService.uploadImageToS3(image, response.signedRequest);
+        return response.url;
     };
-    newEventService.publish = function() {
-        if(!valid.all()) return; //Throw error?
-        return jventService.createEvent(newEventService.event)
-        .then(function(eventURL) {
-            if(!newEventService.event.backgroundImage || !valid.backgroundImage()) {
-                return(eventURL);
-            }
-            return publishImage(newEventService.event.backgroundImage)
-            .then(function(backgroundImageURL) {
-                return jventService.setEventBackground({link: backgroundImageURL}, eventURL);
-            })
-            .then(function() {
-                return(eventURL);
-            });
-        })
-        .then(function(eventURL) {
-            reset();
-            return(eventURL);
-        });
+    newEventService.publish = async function() {
+        if(!valid.all()) throw Error("Validation Failed");
+        let eventURL = await jventService.createEvent(newEventService.event);
+        if(newEventService.event.backgroundImage && valid.backgroundImage()) {
+            let backgroundImageURL = await publishImage(newEventService.event.backgroundImage);
+            await jventService.setEventBackground({link: backgroundImageURL}, eventURL);
+        }
+        reset();
+        return(eventURL);
     };
     
     var reset = function() {
@@ -1278,17 +1264,15 @@ app.factory('newMediaService', function(userService, contextEvent, validationSer
     var newMediaService = {};
     var media = {};
     newMediaService.media = media;
-    newMediaService.publish = function() {
+    newMediaService.publish = async function() {
         if(!valid.all()) throw Error("Validation Failed");
-        return jventService.createMedia(newMediaService.media, contextEvent.event.url)
-        .then(function(mediaURL) {
-            reset();
-            return(mediaURL);
-        });
+        let mediaURL = await jventService.createMedia(newMediaService.media, contextEvent.event.url);
+        reset();
+        return(mediaURL);
     };
     var valid = {
         link: function() {
-            return validationService(newMediaService.   media.link).isLink();
+            return validationService(newMediaService.media.link).isLink();
         },
         all: function() {
             return (valid.link());
@@ -1311,27 +1295,19 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
     var post = {};
     newPostService.post = post;
     newPostService.media = newMediaService.media;
-    var publishPost = function() {
-        return Q.fcall(function() {
-            if(!valid.all()) throw new Error("Validation Failed");
-            return jventService.createPost(undefined, newPostService.post, contextEvent.event.url)
-        })
-        .then(function(response) {
-            reset();
-            return(response);
-        });
+    var publishPost = async function() {
+        if(!valid.all()) throw new Error("Validation Failed");
+        let response = await jventService.createPost(undefined, newPostService.post, contextEvent.event.url)
+        reset();
+        return(response);
     };
-    var publishPostAndMedia = function() {
-        return Q.fcall(function() {
-            if(!valid.all()||!newMediaService.valid.all()) throw new Error("Validation Failed");
-            return jventService.createPost(newMediaService.media, newPostService.post, contextEvent.event.url)
-        })
-        .then(function(response) {
-            reset();
-            return(response);
-        });
+    var publishPostAndMedia = async function() {
+        if(!valid.all()||!newMediaService.valid.all()) throw new Error("Validation Failed");
+        let response = await jventService.createPost(newMediaService.media, newPostService.post, contextEvent.event.url);
+        reset();
+        return(response);
     };
-    newPostService.publish = function() {
+    newPostService.publish = async function() {
         if(newMediaService.initialized()) {
             return publishPostAndMedia();
         }
@@ -1548,7 +1524,7 @@ app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventSe
         await postVoteService.fetchAllVotes();
         $scope.loaded = true;
     };
-    $scope.refresh = function() {
+    $scope.refresh = async function() {
         try {
             $scope.loadEvent(await contextEvent.getEvent($routeParams.eventURL));
         }
@@ -1733,14 +1709,12 @@ app.controller('signUpCtrl', function($scope, userService, navService) {
     $scope.validPassword = function() {
         return userService.validPassword($scope.newUser.password, $scope.newUser.repassword);
     };
-    $scope.createAccount = function () {
+    $scope.createAccount = async function() {
         if($scope.validPassword() && $scope.newUser.email && $scope.newUser.username) {
-            userService.register($scope.newUser)
-            .then(function(status) {
-                if(status.success) {
-                    navService.login();
-                }
-            });
+            let status = await userService.register($scope.newUser);
+            if(status.success) {
+                navService.login();
+            }
         }
     };
 });
@@ -1750,30 +1724,25 @@ app.controller('loginCtrl', function($scope, userService, navService, dialogServ
     $scope.password;
     $scope.remainSignedIn = false;
     $scope.signInPending = false;
-    $scope.signIn = function() {
-        if($scope.email && $scope.password) {
-            $scope.signInPending = true;
-            var creds = {
-                email: $scope.email,
-                password: $scope.password
-            };
-            var options = {
-                remainSignedIn: $scope.remainSignedIn
-            }
-            userService.login(creds, options)
-            .then(function(success) {
-                if(success) {
-                    navService.home();
-                }
-                else {
-                    $scope.password = "";
-                    dialogService.message("That failed. Check your creds.")
-                }
-            })
-            .finally(function() {
-                $scope.signInPending = false;
-            });
+    $scope.signIn = async function() {
+        if(!$scope.email || !$scope.password) return;
+        $scope.signInPending = true;
+        let creds = {
+            email: $scope.email,
+            password: $scope.password
+        };
+        let options = {
+            remainSignedIn: $scope.remainSignedIn
         }
+        let loginSuccess = await userService.login(creds, options);
+        if(success) {
+            navService.home();
+        }
+        else {
+            $scope.password = "";
+            dialogService.message("That failed. Check your creds.")
+        }
+        $scope.signInPending = false;
     };
     $scope.signUp = function() {
         navService.signup();
@@ -1791,12 +1760,10 @@ app.controller('logoutCtrl', function($scope, userService, navService) {
 app.controller('eventMembershipCtrl', function($scope, eventMembershipService, navService) {
     $scope.selectedList = {};
     $scope.roles = ["attendee", "viewer", "invite", "moderator"];
-    $scope.getEventList = function(role) {
-        eventMembershipService.getEventList(role)
-        .then(function(eventList) {
-            $scope.selectedList = eventList;
-            console.log(eventList);
-        });
+    $scope.getEventList = async function(role) {
+        let eventList = await eventMembershipService.getEventList(role);
+        $scope.selectedList = eventList;
+        console.log(eventList);
     };
     $scope.navigateEvent = function(eventURL) {
         navService.event(eventURL);
@@ -1807,13 +1774,9 @@ app.controller('changePasswordCtrl', function($scope, userService) {
     $scope.oldpassword;
     $scope.password;
     $scope.repassword;
-    $scope.changePassword = function() {
-        if($scope.validPassword() && $scope.oldpassword) {
-            userService.changePassword($scope.oldpassword, $scope.password)
-            .then(function(status) {
-                //TODO: Handle
-            });
-        }
+    $scope.changePassword = async function() {
+        if(!$scope.validPassword() || !$scope.oldpassword) return;
+        let status = await userService.changePassword($scope.oldpassword, $scope.password);
     };
     $scope.validPassword = function() {
         return userService.validPassword($scope.password, $scope.repassword);
