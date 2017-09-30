@@ -1387,7 +1387,7 @@ app.controller('eventListCtrl', function($scope, eventListService, navService, $
     }
     $scope.initialize = async function() {
         $scope.loadEvents(await eventListService.getEventList());
-        $scope.$digest();
+        $scope.$applyAsync();
     };
     $scope.initialize();
     // $scope.query = {
@@ -1428,6 +1428,7 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, di
         }
         finally {
             $scope.pendingRequest = false;
+            $scope.$applyAsync();
         }
     };
     $scope.backgroundImageChange = function(e) {
@@ -1628,6 +1629,7 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
             dialogService.genericError(error);
         }
         finally {
+            $scope.$applyAsync();
             $scope.pendingRequest = false;
         }
     };
@@ -1645,6 +1647,7 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
         catch (error) {
             dialogService.networkError(error)
         }
+        $scope.$applyAsync();
     };
     $scope.loadPost = async function(response) {
         let post = response.post;
@@ -1716,6 +1719,7 @@ app.controller('signUpCtrl', function($scope, userService, navService) {
                 navService.login();
             }
         }
+        $scope.$applyAsync();
     };
 });
 
@@ -1735,7 +1739,7 @@ app.controller('loginCtrl', function($scope, userService, navService, dialogServ
             remainSignedIn: $scope.remainSignedIn
         }
         let loginSuccess = await userService.login(creds, options);
-        if(success) {
+        if(loginSuccess) {
             navService.home();
         }
         else {
@@ -1743,11 +1747,11 @@ app.controller('loginCtrl', function($scope, userService, navService, dialogServ
             dialogService.message("That failed. Check your creds.")
         }
         $scope.signInPending = false;
+        $scope.$applyAsync();
     };
     $scope.signUp = function() {
         navService.signup();
     };
-    console.log(userService);
 });
 
 app.controller('logoutCtrl', function($scope, userService, navService) {
