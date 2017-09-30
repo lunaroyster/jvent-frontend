@@ -1532,7 +1532,7 @@ app.controller('userListCtrl', function($scope, $routeParams, userMembershipServ
         $scope.roles = userMembershipService.roles;
     };
     $scope.refresh();
-    $scope.getUserList = function(role) {
+    $scope.getUserList = async function(role) {
         let userList = await userMembershipService.getUserList(role);
         $scope.selectedList = userList;
         console.log(userList);
@@ -1572,13 +1572,10 @@ app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventSe
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {
     $scope.loaded = false;
 
-    $scope.initialize = function() {
-        contextEvent.getEvent($routeParams.eventURL)
-        .then(function(event) {
-            $scope.event = event;
-            return postListService.getPostList($routeParams.eventURL)
-            .then($scope.loadPosts);
-        });
+    $scope.initialize = async function() {
+        let event = await contextEvent.getEvent($routeParams.eventURL);
+        $scope.event = event;
+        $scope.loadPosts(await postListService.getPostList($routeParams.eventURL));
     };
     $scope.loadPosts = function(response) {
         $scope.postList = response.postList;
@@ -1625,14 +1622,13 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
         navService.login();
     }
     newPostService.reset();
-    $scope.refresh = function() {
-        return contextEvent.getEvent($routeParams.eventURL)
-        .then(function(event) {
-            $scope.event = event;
-        })
-        .catch(function(error) {
+    $scope.refresh = async function() {
+        try {
+            $scope.event = await contextEvent.getEvent($routeParams.eventURL);
+        }
+        catch (error) {
             dialogService.networkError(error);
-        });
+        }
     };
     $scope.refresh();
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
@@ -1645,19 +1641,18 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
         return !$scope.pendingRequest && $scope.validPost.all() && (validMedia);
     };
     $scope.pendingRequest = false;
-    $scope.createPost = function() {
-        if(!$scope.pendingRequest) {
+    $scope.createPost = async function() {
+        if($scope.pendingRequest) return;
+        try {
             $scope.pendingRequest = true;
-            newPostService.publish()
-            .then(function(response) {
-                navService.post($scope.event.url, response.postURL);
-            })
-            .catch(function(error) {
-                dialogService.genericError(error);
-            })
-            .finally(function() {
-                $scope.pendingRequest = false;
-            });
+            let response = await newPostService.publish();
+            navService.post($scope.event.url, response.postURL);
+        }
+        catch (error) {
+            dialogService.genericError(error);
+        }
+        finally {
+            $scope.pendingRequest = false;
         }
     };
 });
@@ -1666,26 +1661,22 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
     $scope.loaded = false;
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
 
-    $scope.initialize = function() {
-        contextEvent.getEvent($routeParams.eventURL)
-        .then(function(event) {
-            $scope.event = event;
-            return contextPost.getPost($routeParams.postURL) // Where is event resolved?
-            .then($scope.loadPost)
-            .catch(function(error) {
-                dialogService.networkError(error)
-            });
-        });
+    $scope.initialize = async function() {
+        try {
+            $scope.event = await contextEvent.getEvent($routeParams.eventURL);
+            $scope.loadPost(await contextPost.getPost($routeParams.postURL)); // Where is event resolved?
+        }
+        catch (error) {
+            dialogService.networkError(error)
+        }
     };
-    $scope.loadPost = function(response) {
-        var post = response.post;
+    $scope.loadPost = async function(response) {
+        let post = response.post;
         $scope.post = post;
         $scope.loaded = true;
         if(!response.mediaPromise) return;
-        response.mediaPromise
-        .then(function(mediaBlobURL) {
-            console.log(mediaBlobURL);
-        })
+        let mediaBlobURL = await response.mediaPromise;
+        console.log(mediaBlobURL);
     };
 
     $scope.titleClick = function() {
@@ -1694,12 +1685,12 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
 
     $scope.getTimeString = function(timeType) {
         if(!$scope.loaded) return "Somewhere back in time... or not.";
-        var time = $scope.post.time[timeType];
+        let time = $scope.post.time[timeType];
         return timeService.timeSinceString(time);
     };
     $scope.getTime = function(timeType) {
         if(!$scope.loaded) return "Somewhere back in time... or not.";
-        var time = $scope.post.time[timeType];
+        let time = $scope.post.time[timeType];
         return timeService.timeAsUTC(time);
     };
 
