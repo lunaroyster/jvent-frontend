@@ -1154,7 +1154,7 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, postVoteService, Media, Post, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, postVoteService, Media, Post, jventService) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -1394,28 +1394,24 @@ app.controller('homeController', function($scope, $rootScope, eventMembershipSer
 
 //Event
 app.controller('eventListCtrl', function($scope, eventListService, navService, $q) {
-    $scope.loadEventMedia = function(event) {
-        return event.backgroundImage.getAsBlob()
-        .then(function(blobURL) {
-            event.image = blobURL;
-        });
+    $scope.loadEventMedia = async function(event) {
+        event.image = await event.backgroundImage.getAsBlob();
     }
-    $scope.loadEvents = function(eventList) {
+    $scope.loadEvents = async function(eventList) {
         //  TODO: Super temporary. Get rid of this crap.
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            $scope.eventArray = eventList;
-            var mediaPromises = [];
-            for (let event of eventList) {
-                if(!event.backgroundImage) continue;
-                mediaPromises.push($scope.loadEventMedia(event));
-            }
-            return $q.all(mediaPromises);
-        })
+        $scope.eventArray = eventList;
+        // let mediaPromises = [];
+        //  TODO: Decide whether to load event background sequentially, or in parallel.
+        for (let event of eventList) {
+            if(!event.backgroundImage) continue;
+            // mediaPromises.push($scope.loadEventMedia(event)); //This one loads in parallel
+            await $scope.loadEventMedia(event); //This one loads sequentially
+        }
+        // return $q.all(mediaPromises);
     }
-    $scope.initialize = function() {
-        return eventListService.getEventList()
-        .then($scope.loadEvents);
+    $scope.initialize = async function() {
+        $scope.loadEvents(await eventListService.getEventList());
+        $scope.$digest();
     };
     $scope.initialize();
     // $scope.query = {
@@ -1444,23 +1440,22 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, di
         return !$scope.pendingRequest && $scope.valid.all();
     };
     $scope.pendingRequest = false;
-    $scope.createEvent = function() {
-        if(!$scope.pendingRequest) {
+    $scope.createEvent = async function() {
+        if($scope.pendingRequest) return;
+        try {
             $scope.pendingRequest = true;
-            newEventService.publish()
-            .then(function(eventURL) {
-                navService.event(eventURL);
-            },
-            function(error) {
-                dialogService.paramMsgArrayError(error)
-            })
-            .then(function() {
-                $scope.pendingRequest = false;
-            });
+            let eventURL = await newEventService.publish();
+            navService.event(eventURL);
+        }
+        catch (error) {
+            dialogService.paramMsgArrayError(error);
+        }
+        finally {
+            $scope.pendingRequest = false;
         }
     };
     $scope.backgroundImageChange = function(e) {
-        var imageFiles = e.target.files[0];
+        let imageFiles = e.target.files[0];
         $scope.newEvent.backgroundImage = imageFiles;
         $scope.backgroundImagePreviewURL = URL.createObjectURL(imageFiles);
         //move $scope.backgroundImagePreviewURL to $scope.newEvent?
@@ -1480,12 +1475,13 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
         $scope.loaded = true;
         $scope.$digest();
     };
-    $scope.refresh = function() {
-        return contextEvent.getEvent($routeParams.eventURL)
-        .then($scope.loadEvent)
-        .catch(function(error) {
+    $scope.refresh = async function() {
+        try {
+            $scope.loadEvent(await contextEvent.getEvent($routeParams.eventURL));
+        }
+        catch (error) {
             dialogService.networkError(error);
-        });
+        }
     };
     $scope.refresh();
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
@@ -1494,11 +1490,18 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
     $scope.join = async function() {
         //Make sure request can be made
         $scope.joinPending = true;
-        await contextEvent.event.join()
-        //Redirect to content upon success
-        console.log("Joined event");
-        $scope.joinPending = false;
-        $scope.$digest();
+        try {
+            await contextEvent.event.join();
+            //Redirect to content upon success
+            console.log("Joined event");
+        }
+        catch (error) {
+            console.log(error);
+        }
+        finally {
+            $scope.joinPending = false;
+            $scope.$digest();
+        }
     };
     $scope.view = function() {
         navService.posts(contextEvent.event.url);
@@ -1524,55 +1527,44 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
 
 app.controller('userListCtrl', function($scope, $routeParams, userMembershipService) {
     $scope.selectedList = {};
-    $scope.refresh = function() {
-        return userMembershipService.initialize($routeParams.eventURL)
-        .then(function() {
-            $scope.roles = userMembershipService.roles;
-        });
+    $scope.refresh = async function() {
+        await userMembershipService.initialize($routeParams.eventURL);
+        $scope.roles = userMembershipService.roles;
     };
     $scope.refresh();
     $scope.getUserList = function(role) {
-        userMembershipService.getUserList(role)
-        .then(function(userList) {
-            $scope.selectedList = userList;
-            console.log(userList);
-        });
+        let userList = await userMembershipService.getUserList(role);
+        $scope.selectedList = userList;
+        console.log(userList);
     };
 });
 
 app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, dialogService, postVoteService, awsService) {
     $scope.loaded = false;
-    $scope.loadEvent = function(event) {
+    $scope.loadEvent = async function(event) {
         $scope.event = event;
         console.log($scope.event)
         console.log(postVoteService)
-        postVoteService.fetchAllVotes();
+        await postVoteService.fetchAllVotes();
         $scope.loaded = true;
     };
     $scope.refresh = function() {
-        return contextEvent.getEvent($routeParams.eventURL)
-        .then($scope.loadEvent)
-        .catch(function(error) {
+        try {
+            $scope.loadEvent(await contextEvent.getEvent($routeParams.eventURL));
+        }
+        catch (error) {
             dialogService.networkError(error)
-        });
+        }
     };
     $scope.refresh();
-    $scope.setEventBackground = function() {
+    $scope.setEventBackground = async function() {
         // var media = {
         //     link: $scope.backgroundLink
         // }
-        var image = $("#filePicker")[0].files[0];
-        jventService.getImageUploadToken(image.name, image.type)
-        .then(function(response) {
-            console.log(response)
-            return awsService.uploadImageToS3(image, response.signedRequest)
-            .then(function() {
-                return response.url;
-            });
-        })
-        .then(function(url) {
-            jventService.setEventBackground({link: url}, $scope.event.url);
-        });
+        let image = $("#filePicker")[0].files[0];
+        let response = await jventService.getImageUploadToken(image.name, image.type);
+        await awsService.uploadImageToS3(image, response.signedRequest)
+        await jventService.setEventBackground({link: response.url}, $scope.event.url);
     };
 });
 
