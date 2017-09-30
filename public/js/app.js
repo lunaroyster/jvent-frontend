@@ -14,7 +14,7 @@ var on = function(name, handler) {
     else {
         this._events[name] = [handler];
     }
-}
+};
 var invoke = function(name, args) {
     var res = [];
     if(!this._events.hasOwnProperty(name)) return;
@@ -23,7 +23,7 @@ var invoke = function(name, args) {
         res.push(fn.apply(this, args));
     }
     return res;
-}
+};
 
 var app = angular.module("jvent", ['ngRoute', 'ngRaven']);
 // var app = angular.module("jvent", ['ngRoute']);
@@ -137,194 +137,87 @@ app.config(['$routeProvider', function($routeProvider) {
 
 //  Location Services {
 app.service('urlService', function() {
-    var apiURL = 'api/';
-    var apiVersion = 'v0/';
+    let apiURL = 'api/';
+    let apiVersion = 'v0/';
 
-    this.api = function() {
-        return(apiURL+apiVersion);
-    };
+    this.api = ()=> `${apiURL}${apiVersion}`;
 
-    this.event = function() {
-        return(this.api() + 'event/');
-    };
-    this.eventURL = function(eventURL) {
-        return(this.event() + eventURL + '/');
-    };
-    this.eventJoin = function(eventURL) {
-        return(this.eventURL(eventURL) + 'join/');
-    };
-    this.eventUsers = function(eventURL) {
-        return(this.eventURL(eventURL) + 'users/');
-    };
-    this.eventSettings = function(eventURL) {
-        return(this.eventURL(eventURL) + 'settings/');
-    };
-    this.eventSettingsBackground = function(eventURL) {
-        return(this.eventSettings(eventURL) + 'eventBackground/');
-    };
-    this.eventUsersRole = function(eventURL, role) {
-        return(this.eventUsers(eventURL) + role + '/');
-    };
+    this.event = ()=> `${this.api()}event/`;
+    this.eventURL = (eventURL)=> `${this.event()}${eventURL}/`;
+    this.eventJoin = (eventURL)=> `${this.eventURL(eventURL)}join/`;
+    this.eventUsers = (eventURL)=> `${this.eventURL(eventURL)}users/`;
+    this.eventSettings = (eventURL)=> `${this.eventURL(eventURL)}settings/`;
+    this.eventSettingsBackground = (eventURL)=> `${this.eventSettings(eventURL)}eventBackground/`;
+    this.eventUsersRole = (eventURL, role)=> `${this.eventUsers(eventURL)}${role}/`;
 
-    this.post = function(eventURL) {
-        return(this.eventURL(eventURL) + 'post/');
-    };
-    this.postRanked = function(eventURL, rank) {
-        return(this.post(eventURL) + '?rank=' + rank);
-    };
-    this.postURL = function(eventURL, postURL) {
-        return(this.post(eventURL) + postURL + '/');
-    };
-    this.postURLVote = function(eventURL, postURL) {
-        return(this.postURL(eventURL, postURL) + 'vote/');
-    };
+    this.post = (eventURL)=> `${this.eventURL(eventURL)}post/`;
+    this.postRanked = (eventURL, rank)=> `${this.post(eventURL)}?rank=${rank}`;
+    this.postURL = (eventURL, postURL)=> `${this.post(eventURL)}${postURL}/`;
+    this.postURLVote = (eventURL, postURL)=> `${this.postURL(eventURL, postURL)}vote/`;
 
-    this.media = function(eventURL) {
-        return(this.eventURL(eventURL) + 'media/');
-    };
+    this.media = (eventURL)=> `${this.eventURL(eventURL)}media/`;
 
-    this.comment = function(eventURL, postURL) {
-        return(this.postURL(eventURL, postURL) + 'comment/');
-    };
-    this.commentURL = function(eventURL, postURL, commentURL) {
-        return(this.comment(eventURL, postURL) + commentURL + '/');
-    };
+    this.comment = (eventURL, postURL)=> `${this.postURL(eventURL, postURL)}comment/`;
+    this.commentURL = (eventURL, postURL, commentURL)=> `${this.comment(eventURL, postURL)}${commentURL}/`;
 
-    this.user = function() {
-        return(this.api() + 'user/');
-    };
+    this.user = ()=> `${this.api()}user/`;
+    this.userMe = ()=> `${this.user()}me/`;
+    this.userMeevent = ()=> `${this.userMe()}event/`;
+    this.userMeEventRole = (role)=> `${this.userMeevent()}role/${role}/`;
+    this.userMeEventID = (eventID)=> `${this.userMeevent()}${eventID}/`;
+    this.userMeEventPost = (eventID)=> `${this.userMeEventID(eventID)}post/`;
+    this.userMeEventPostVotes = (eventID)=> `${this.userMeEventPost(eventID)}votes/`;
+    this.userMeEventMedia = (eventID)=> `${this.userMeEventID(eventID)}media/`;
+    this.userMePost = ()=> `${this.userMe()}post/`;
+    this.userMePostVotes = ()=> `${this.userMePost()}votes/`;
+    this.userMeMedia = ()=> `${this.userMe()}media/`;
+    this.userMeChangePassword = ()=> `${this.userMe()}changepassword/`;
 
-    this.userMe = function() {
-        return(this.user() + 'me/');
-    };
-    this.userMeevent = function() {
-        return(this.userMe() + 'event/');
-    };
-    this.userMeEventRole = function(role) {
-        return(this.userMeevent() + 'role/' + role + '/');
-    };
-    this.userMeEventID = function(eventID) {
-        return(this.userMeevent() + eventID + '/');
-    };
-    this.userMeEventPost = function(eventID) {
-        return(this.userMeEventID(eventID) + 'post/');
-    };
-    this.userMeEventPostVotes = function(eventID) {
-        return(this.userMeEventPost(eventID) + 'votes/');
-    };
-    this.userMeEventMedia = function(eventID) {
-        return(this.userMeEventID(eventID) + 'media/');
-    };
-    this.userMePost = function() {
-        return(this.userMe() + 'post/');
-    };
-    this.userMePostVotes = function() {
-        return(this.userMePost() + 'votes/');
-    };
-    this.userMeMedia = function() {
-        return(this.userMe() + 'media/');
-    };
-
-    this.userEvents = function() {
-        return(this.user() + 'events/');
-    };
-    this.userEventID = function(eventID) {
-        return(this.userEvents() + eventID + '/');
-    }
-    this.userEventsRole = function(role) {
-        return(this.userEvents() + 'role/' + role + '/');
-    };
-    this.userSignUp = function() {
-        return(this.user() + 'signup/');
-    };
-    this.userChangePassword = function() {
-        return(this.user() + 'changepassword/');
-    };
-    this.userAuthenticate = function() {
-        return(this.user() + 'authenticate/');
-    };
+    this.userEvents = ()=> `${this.user()}events/`;
+    this.userEventID = (eventID)=> `${this.userEvents()}${eventID}/`;
+    this.userEventsRole = (role)=> `${this.userEvents()}role/${role}/`;
+    this.userSignUp = ()=> `${this.user()}signup/`;
+    this.userAuthenticate = ()=> `${this.user()}authenticate/`;
     
-    this.service = function() {
-        return(this.api() + 'service/');
-    };
-    this.serviceMedia = function() {
-        return(this.service() + 'media/');
-    };
-    this.serviceMediaImage = function() {
-        return(this.serviceMedia() + 'image/');
-    };
-    this.serviceMediaImageToken = function() {
-        return(this.serviceMediaImage() + 'token/');
-    };
+    this.service = ()=> `${this.api()}service/`;
+    this.serviceMedia = ()=> `${this.service()}media/`;
+    this.serviceMediaImage = ()=> `${this.serviceMedia()}image/`;
+    this.serviceMediaImageToken = ()=> `${this.serviceMediaImage()}token/`;
 });
 
 app.service('navService', function($location) {
-    this.home = function() {
-        $location.path('/');
-    };
-    this.events = function() {
-        $location.path('/events');
-    };
-    this.event = function(eventURL) {
-        $location.path('/event/' + eventURL);
-    };
-    this.posts = function(eventURL) {
-        $location.path('/event/' + eventURL + '/posts');
-    };
-    this.post = function(eventURL, postURL) {
-        $location.path('/event/' + eventURL + '/post/' + postURL);
-    };
-    this.newEvent = function() {
-        $location.path('/event/new');
-    };
-    this.newPost = function(eventURL) {
-        $location.path('/event/' + eventURL + '/post/new');
-    };
-    this.login = function() {
-        $location.path('/login');
-    };
-    this.logout = function() {
-        $location.path('/logout');
-    };
-    this.signup = function() {
-        $location.path('/signup');
-    };
+    this.home = ()=> $location.path(`/`);
+    this.events = ()=> $location.path(`/events`);
+    this.event = (eventURL)=> $location.path(`/event/${eventURL}`);
+    this.posts = (eventURL)=> $location.path(`/event/${eventURL}/posts`);
+    this.post = (eventURL, postURL)=> $location.path(`/event/${eventURL}/post/${postURL}`);
+    this.newEvent = ()=> $location.path(`/event/new`);
+    this.newPost = (eventURL)=> $location.path(`/event/${eventURL}/post/new`);
+    this.login = ()=> $location.path(`/login`);
+    this.logout = ()=> $location.path(`/logout`);
+    this.signup = ()=> $location.path(`/signup`);
 });
 
 app.service('validationService', function() {
     return function(value) {
         return {
-            isLink: function() {
-                var linkRegex = new RegExp(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/);
+            isLink: ()=> {
+                let linkRegex = new RegExp(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/);
                 return linkRegex.test(value);
             },
-            isEmail: function() {
-                var emailRegex = new RegExp(/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/);
+            isEmail: ()=> {
+                let emailRegex = new RegExp(/[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/);
                 return emailRegex.test(value);
             },
-            isVote: function() {
-                return(value===-1||value===0||value===1);
-            },
-            inRange: function(min, max) {
-                return(value>=min && value<=max);
-            },
-            min: function(min) {
-                return(value>=min);
-            },
-            max: function(max){
-                return(value<=max);
-            },
-            isIn: function(array) {
-                return array.indexOf(value)!=-1;
-            },
-            isOfType: function(type) {
-                return typeof(value)==type;
-            },
-            isOfObjectType: function(type) {
-                return(value.constructor.name==type);
-            }
-        }
-    }
+            isVote: ()=> (value===-1||value===0||value===1),
+            inRange: (min, max)=> (value>=min && value<=max),
+            min: (min)=> (value>=min),
+            max: (max)=> (value<=max),
+            isIn: (array)=> (array.indexOf(value)!=-1),
+            isOfType: (type)=> (typeof(value)==type),
+            isOfObjectType: (type)=> (value.constructor.name==type)
+        };
+    };
 });
 //  }
 
@@ -352,23 +245,23 @@ app.service('timeService', function() {
 
 app.service('dialogService', function() {
     this.networkError = function(error) {
-        Materialize.toast(error.status + ' ' + error.statusText, 4000);
+        Materialize.toast(`${error.status} ${error.statusText}`, 4000);
     };
     this.paramMsgArrayError = function(error) {
-        for (var err of error) {
-            Materialize.toast(err.param + ' ' + err.msg, 4000);
+        for (let err of error) {
+            Materialize.toast(`${err.param} ${err.msg}`, 4000);
         }
     };
     this.genericError = function(error) {
-        Materialize.toast(error.name + ': ' + error.message);
+        Materialize.toast(`${error.name}: ${error.message}`);
     };
     this.message = function(message) {
         Materialize.toast(message);
-    }
-})
+    };
+});
 
 
-app.factory('userService', function($rootScope, urlService, $http, $q) {
+app.factory('userService', function($rootScope, urlService, $http) {
     var obj = {};
     obj.authed = false;
     obj.authStore = null;
@@ -376,7 +269,7 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj._events = {};
     var logoutCallbacks = [];
     var getAuthStore = function() {
-        var storage = [window.localStorage, window.sessionStorage];
+        let storage = [window.localStorage, window.sessionStorage];
         for(var i = 0; i<storage.length;i++) {
             if(storage[i].token) {
                 return storage[i];
@@ -405,17 +298,15 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         console.log("Deleting Auth Header");
         $http.defaults.headers.common['Authorization'] = '';
     };
-    var getTokenFromServer = function(creds) {
-        var req = {
+    var getTokenFromServer = async function(creds) {
+        let req = {
             method: 'POST',
             url: urlService.userAuthenticate(),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            data: 'email='+creds.email+'&password='+creds.password,
+            data: `email=${creds.email}&password=${creds.password}`,
         };
-        return $http(req)
-        .then(function(data) {
-            return data.data.token;
-        });
+        let response = await $http(req);
+        return response.data.token;
     };
     var loadUser = function() {
         console.log("Searching for User");
@@ -435,9 +326,9 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
     obj.isAuthed = function() {
         return(obj.authed);
     };
-    obj.login = function(creds, options) {
-        return getTokenFromServer(creds)
-        .then(function(token) {
+    obj.login = async function(creds, options) {
+        try {
+            let token = await getTokenFromServer(creds)
             setAuthStore(options.remainSignedIn);
             storeToken(token);
             setAuthHeader(token);
@@ -445,10 +336,10 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
             $rootScope.authed = true;
             obj.authed = true;
             return true;
-        })
-        .catch(function(error) {
+        }
+        catch (error) {
             return false;
-        });
+        }
     };
     obj.logout = function() {
         obj.authStore.removeItem("token");
@@ -458,223 +349,170 @@ app.factory('userService', function($rootScope, urlService, $http, $q) {
         obj.invoke("logout");
         obj.authed = false;
     };
-    obj.register = function(user) {
-        var req = {
+    obj.register = async function(user) {
+        let req = {
             method: 'POST',
             url: urlService.userSignUp(),
             data: {
                 user: user
             }
         };
-        return $http(req)
-        .then(function(data) {
-            if(data.status == 201) {
-                return {success: true, err: null};
-            }
-        });
+        let response = await $http(req);
+        if(response.status == 201) {
+            return {success: true, err: null};
+        }
     };
-    obj.changePassword = function(oldpassword, newpassword) {
-        var req = {
+    obj.changePassword = async function(oldpassword, newpassword) {
+        let req = {
             method: 'POST',
-            url: urlService.userChangePassword(),
+            url: urlService.userMeChangePassword(),
             headers: {
                 'oldpassword': oldpassword,
                 'newpassword': newpassword
             }
         };
-        return $http(req)
-        .then(function(data) {
-            console.log(data.data); //TODO: write handler
-        });
+        let response = await $http(req);
+        console.log(response.data); //TODO: write handler
     };
     obj.user = function() {
         return "Username here";
     };
     obj.validPassword = function(password, repassword) {
-        if(!password){return false;}
-        if(password == repassword){return(true);}
-        else {return(false);}
+        if(!password) return false;
+        if(password == repassword) return(true);
+        return(false);
     };
     loadUser();
     return(obj);
 });
 
-app.service('jventService', function(urlService, $http, $q) {
-    this.createEvent = function(event) {
-        var url = urlService.event();
-        var data = {
+app.service('jventService', function(urlService, $http) {
+    this.createEvent = async function(event) {
+        let url = urlService.event();
+        let data = {
             event: event
         };
-        return $http.post(url, data)
-        .then(function(response) {
-            var eventURL = response.data.event.url;
-            return eventURL;
-        },
-        function(response) {
-            throw response.data; //HACK: Does this even make sense?
-        });
+        let response = await $http.post(url, data);
+        return response.data.event.url;
     };
-    this.setEventBackground = function(media, eventURL) {
-        var url = urlService.eventSettingsBackground(eventURL);
-        var data = {
+    this.setEventBackground = async function(media, eventURL) {
+        let url = urlService.eventSettingsBackground(eventURL);
+        let data = {
             media: media
         };
-        return $http.post(url, data)
-        .then(function(response) {
-            return;
-            // TODO
-        },
-        function(response) {
-            // TODO
-        });
-    }
-    this.getEvents = function() {
-        // $http.get('debugjson/events.json').then(function (data) {
-        return $http.get(urlService.event())
-        .then(function (data) {
-            return data.data.events;
-        });
+        let response = await $http.post(url, data);
     };
-    this.getEvent = function(eventURL, moderator) {
+    this.getEvents = async function() {
+        // $http.get('debugjson/events.json')
+        let data = await $http.get(urlService.event());
+        return data.data.events;
+    };
+    this.getEvent = async function(eventURL, moderator) {
         moderator = moderator ? 1 : 0;
-        var req = {
+        let req = {
             method: 'GET',
             url: urlService.eventURL(eventURL),
             headers: {
                 'Moderator': moderator
             }
         };
-        return $http(req)
-        .then(function (data) {
-            return data.data.event;
-        });
+        let data = await $http(req);
+        return data.data.event;
     };
-    this.joinEvent = function(eventURL) {
-        var url = urlService.eventJoin(eventURL);
-        return $http.patch(url)
-        .then(function(response) {
-            //Response
-            return;
-        },
-        function(response) {
-            throw Error(); //TODO: Describe error
-        });
+    this.joinEvent = async function(eventURL) {
+        let url = urlService.eventJoin(eventURL);
+        return await $http.patch(url);
     };
-    this.createPost = function(media, post, eventURL) {
-        var url = urlService.post(eventURL);
-        var data = {
+    this.createPost = async function(media, post, eventURL) {
+        let url = urlService.post(eventURL);
+        let data = {
             post: post,
         };
-        if(!!media) {
-            data.media = media;
+        if(!!media) data.media = media;
+        let response = await $http.post(url, data);
+        let res = {};
+        res.postURL = response.data.post.url;
+        if(response.data.media) {
+            res.mediaURL = response.data.media.url;
         }
-        return $http.post(url, data)
-        .then(function(response){
-            var res = {};
-            res.postURL = response.data.post.url;
-            if(response.data.media) {
-                res.mediaURL = response.data.media.url;
-            }
-            return res;
-        });
+        return res;
     };
-    this.getPosts = function(eventURL) {
-        var req = {
+    this.getPosts = async function(eventURL) {
+        let req = {
             method: 'GET',
             url: urlService.postRanked(eventURL, "hot"), //TODO: Temporary
         };
-        return $http(req)
-        .then(function(data) {
-            return data.data.posts;
-        });
+        let response = await $http(req);
+        return response.data.posts;
     };
-    this.getPost = function(postURL, eventURL) {
-        var req = {
+    this.getPost = async function(postURL, eventURL) {
+        let req = {
             method: 'GET',
             url: urlService.postURL(eventURL, postURL)
         };
-        return $http(req)
-        .then(function(data) {
-            return data.data.post;
-        });
+        let response = await $http(req);
+        return response.data.post;
     };
-    this.createMedia = function(media, eventURL) {
-        var url = urlService.media(eventURL);
-        var data = {
+    this.createMedia = async function(media, eventURL) {
+        let url = urlService.media(eventURL);
+        let data = {
             media: media
         };
-        return $http.post(url, data)
-        .then(function(response) {
-            var mediaURL = response.data.media.url;
-            return mediaURL;
-        });
+        let response = await $http.post(url, data);
+        return response.data.media.url;
     };
-    this.postVote = function(eventURL, postURL, direction) {
-        var url = urlService.postURLVote(eventURL, postURL);
-        var data = {
+    this.postVote = async function(eventURL, postURL, direction) {
+        let url = urlService.postURLVote(eventURL, postURL);
+        let data = {
             direction: direction
         };
-        return $http.patch(url, data)
-        .then(function(response) {
-            // TODO
-        });
+        let response = await $http.patch(url, data);
     };
-    this.getUserList = function(eventURL, role) {
-        var url = urlService.eventUsersRole(eventURL, role);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
+    this.getUserList = async function(eventURL, role) {
+        let url = urlService.eventUsersRole(eventURL, role);
+        let response = await $http.get(url);
+        return response.data;
     };
-    this.getPostVotes = function(eventURL) {
-        var url = urlService.userMePostVotes();
+    this.getPostVotes = async function(eventURL) {
+        let url = urlService.userMePostVotes();
         if(eventURL) url = urlService.userMeEventPostVotes(eventURL);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data.votes;
-        });
+        let response = await $http.get(url);
+        return response.data.votes;
     };
-    this.getEventMemberships = function() {
-        var url = urlService.userEvents();
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
+    this.getEventMemberships = async function() {
+        let url = urlService.userEvents();
+        let response = await $http.get(url);
+        return response.data;
     };
-    this.getEventMembershipByEventID = function(eventID) {
-        var url = urlService.userEventID(eventID);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
-    }
-    this.getEventMembershipsByRole = function(role) {
-        var url = urlService.userEventsRole(role);
-        return $http.get(url)
-        .then(function(response) {
-            return response.data;
-        });
+    this.getEventMembershipByEventID = async function(eventID) {
+        let url = urlService.userEventID(eventID);
+        let response = await $http.get(url);
+        return response.data;
     };
-    this.getImageUploadToken = function(fileName, fileType) {
-        var url = urlService.serviceMediaImageToken();
-        return $http({
+    this.getEventMembershipsByRole = async function(role) {
+        let url = urlService.userEventsRole(role);
+        let response = await $http.get(url);
+        return response.data;
+    };
+    this.getImageUploadToken = async function(fileName, fileType) {
+        let url = urlService.serviceMediaImageToken();
+        let req = {
             url: url,
             method: "GET",
             params: {
                 "fileName": fileName,
                 "fileType": fileType
             }
-        })
-        .then(function(response) {
-            return response.data;
-        });
+        };
+        let response = await $http(req);
+        return response.data;
     };
 });
 
-app.service('awsService', function($http, $q) {
-    this.uploadImageToS3 = function(image, signedRequestURL) {
-        var blob = new Blob([image], {type: image.type});
-        var config = {
+app.service('awsService', function($http) {
+    this.uploadImageToS3 = async function(image, signedRequestURL) {
+        let blob = new Blob([image], {type: image.type});
+        let config = {
             url: signedRequestURL,
             method: 'PUT',
             headers: {
@@ -685,11 +523,8 @@ app.service('awsService', function($http, $q) {
             data: blob,
             // transformRequest: angular.identity
         };
-        return $http(config)
-        .then(function(response) {
-            //TODO
-            return response.data;
-        });
+        let response = await $http(config);
+        return response.data;
     };
 });
 
@@ -707,8 +542,8 @@ app.service('mediaService', function($http) {
               }
             };
         }; */
-        var requestFunction = function() {
-            var config = {
+        var requestFunction = async function() {
+            let config = {
                 method: 'GET',
                 url: media.link,
                 responseType: 'blob',
@@ -716,19 +551,17 @@ app.service('mediaService', function($http) {
                    'Authorization': undefined
                  },
             };
-            return $http(config)
-            .then(function(response) {
-                var blob = new Blob([response.data], {type: response.headers('content-type')})
-                return URL.createObjectURL(blob);
-            });
+            let response = await $http(config);
+            let blob = new Blob([response.data], {type: response.headers('content-type')});
+            return URL.createObjectURL(blob);
         };
         var getMediaBlob = function() {
             return requestFunction();
-        }
+        };
         return {
             getMediaBlob: getMediaBlob
-        }
-    }
+        };
+    };
 });
 
 //  Types {
@@ -736,48 +569,39 @@ app.service('Media', function($http, $q) {
     var Media = class {
         constructor(media) {
             this._events = {};
-            this.on = on.bind(this)
-            this.invoke = invoke.bind(this)
+            this.on = on.bind(this);
+            this.invoke = invoke.bind(this);
             this._time = {};
             this._ = media;
             this._time.fetch = Date.now();
             this.invoke("load");
         }
 
-        getAsBlob() {
-            var _this = this;
-            return $q((resolve, reject) => {resolve()})
-            .then(function() {
-                if(_this._blobURL) return;
-                var config = {
-                    method: 'GET',
-                    url: _this.link,
-                    responseType: 'blob',
-                    headers: {
-                       'Authorization': undefined
-                     },
-                };
-                return $http(config)
-                .then(Media.blobifyResponseData)
-                .then(function(blobURL) {
-                    _this._blobURL = blobURL;
-                    _this.invoke("blobURL-change", [blobURL]);
-                });
-            })
-            .then(function() {
-                return _this._blobURL;
-            });
+        async getAsBlob() {
+            if(this._blobURL) return this._blobURL;
+            let config = {
+                method: 'GET',
+                url: this.link,
+                responseType: 'blob',
+                headers: {
+                   'Authorization': undefined
+                 },
+            };
+            let response = await $http(config);
+            this._blobURL = Media.blobifyResponseData(response);
+            this.invoke("blobURL-change", [this._blobURL]);
+            return this._blobURL;
         }
 
         static blobifyResponseData(response) {
-            var blob = new Blob([response.data], {type: response.headers('content-type')})
-            var blobURL = URL.createObjectURL(blob);
+            let blob = new Blob([response.data], {type: response.headers('content-type')});
+            let blobURL = URL.createObjectURL(blob);
             return blobURL;
         }
 
         get link() {
             //TODO: find a more elegant solution
-            console.warn("HACK: Changed link protocol arbitrarily")
+            console.warn("HACK: Changed link protocol arbitrarily");
             if(window.location.protocol=="https:") {
                 return this._.link.replace("http:", "https:");
             }
@@ -792,8 +616,8 @@ app.service('Event', function(jventService, $q) {
     var Event = class {
         constructor(event) {
             this._events = {};
-            this.on = on.bind(this)
-            this.invoke = invoke.bind(this)
+            this.on = on.bind(this);
+            this.invoke = invoke.bind(this);
             this._time = {};
             this._ = event;
             this._time.fetch = Date.now();
@@ -801,15 +625,15 @@ app.service('Event', function(jventService, $q) {
         }
 
         static deserializeArray(rawEventArray) {
-            var EventObjectArray = [];
-            for (var event of rawEventArray) {
+            let EventObjectArray = [];
+            for (let event of rawEventArray) {
                 EventObjectArray.push(new Event(event));
             }
             return EventObjectArray;
         }
 
         get id() {
-            return this._._id
+            return this._._id;
         }
         get url() {
             return this._.url;
@@ -842,9 +666,9 @@ app.service('Event', function(jventService, $q) {
             this._eventMembership = value;
         }
 
-        join() {
-            var promises = this.invoke("join");
-            return $q.all(promises);
+        async join() {
+            let promises = this.invoke("join");
+            return await Promise.all(promises);
         }
 
     };
@@ -868,15 +692,13 @@ app.service('Post', function(jventService, validationService, $q) {
             this.invoke("load");
         }
 
-        static fromPostURL(postURL, eventURL) {
-            return jventService.getPost(postURL, eventURL)
-            .then(function(post) {
-                return new Post(post);
-            });
+        static async fromPostURL(postURL, eventURL) {
+            let post = await jventService.getPost(postURL, eventURL);
+            return new Post(post);
         }
         static deserializeArray(rawPostArray) {
-            var PostObjectArray = [];
-            for (var post of rawPostArray) {
+            let PostObjectArray = [];
+            for (let post of rawPostArray) {
                 PostObjectArray.push(new Post(post));
             }
             return PostObjectArray;
@@ -920,19 +742,19 @@ app.service('Post', function(jventService, validationService, $q) {
             }
         }
 
-        comment(comment) {
-            var promises = this.invoke("comment"); //Comment as eventArgs
-            return $q.all(promises);
+        async comment(comment) {
+            let promises = this.invoke("comment"); //Comment as eventArgs
+            return await Promise.all(promises);
         }
 
         static getPost() {
 
         }
-    }
+    };
     return Post;
 });
 
-app.service('EventMembership', function(jventService, $q) {
+app.service('EventMembership', function(jventService) {
     var EventMembership = class {
         constructor(eventMembership) {
             //initialize post
@@ -960,8 +782,8 @@ app.service('EventMembership', function(jventService, $q) {
         }
 
         static deserializeArray(rawEventMembershipArray) {
-            var EventMembershipObjectArray = [];
-            for (var eventMembership of rawEventMembershipArray) {
+            let EventMembershipObjectArray = [];
+            for (let eventMembership of rawEventMembershipArray) {
                 EventMembershipObjectArray.push(new EventMembership(eventMembership));
             }
             return EventMembershipObjectArray;
@@ -975,7 +797,7 @@ app.service('EventMembership', function(jventService, $q) {
 //  }
 
 //  List Providers {
-app.factory('eventListService', function(jventService, eventMembershipService, userService, Event, Media, $q) {
+app.factory('eventListService', function(jventService, eventMembershipService, userService, Event, Media) {
     var eventListService = {};
     var lastQuery = {};
     var lastUpdate;
@@ -990,18 +812,15 @@ app.factory('eventListService', function(jventService, eventMembershipService, u
         //TODO: compare eventListService.query and lastQuery
         return false;
     };
-    var setEventList = function(rawEventList) {
-        var newEventList = Event.deserializeArray(rawEventList);
-        for (var event of newEventList) {
+    var setEventList = async function(rawEventList) {
+        let newEventList = Event.deserializeArray(rawEventList);
+        for (let event of newEventList) {
             if(event.backgroundImage) event.backgroundImage = new Media(event.backgroundImage);
             //TODO: Set eventMembership for event
-            eventMembershipService.getEventMembership(event)
-            .then(function(eventMembership) {
-                event.eventMembership = eventMembership;
-            })
+            // event.eventMembership = await eventMembershipService.getEventMembership(event);
         }
         userService.on("logout", function() {
-            for (var event of newEventList) {
+            for (let event of newEventList) {
                 event.eventMembership = null;
             }
         })
@@ -1009,24 +828,16 @@ app.factory('eventListService', function(jventService, eventMembershipService, u
         lastUpdate = Date.now();
         eventListService.loadedEventList = true;
     };
-    eventListService.getEventList = function() {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(queryChange() || !fresh()) {
-                return jventService.getEvents()
-                .then(function(rawEventList) {
-                    setEventList(rawEventList);
-                });
-            }
-        })
-        .then(function() {
-            return(eventListService.eventList);
-        });
+    eventListService.getEventList = async function() {
+        if(queryChange() || !fresh()) {
+            setEventList(await jventService.getEvents());
+        }
+        return(eventListService.eventList);
     };
     return eventListService;
 });
 
-app.factory('userMembershipService', function(userService, contextEvent, jventService, $q) {
+app.factory('userMembershipService', function(userService, contextEvent, jventService) {
     var userMembershipService = {};
     userMembershipService.userLists = {};
     userMembershipService.cacheTime = 60000;
@@ -1034,45 +845,28 @@ app.factory('userMembershipService', function(userService, contextEvent, jventSe
     var updateRequired = function(userList) {
         return !((Date.now() - userList.lastUpdate) < userMembershipService.cacheTime);
     };
-    var downloadAndCreateList = function(role) {
-        return jventService.getUserList(contextEvent.event.url, role)
-        .then(function(list) {
-            var userList = {
-                list: list,
-                role: role,
-                lastUpdate: Date.now(),
-                //lastQuery: query
-            };
-            return userList;
-        });
+    var downloadAndCreateList = async function(role) {
+        let list = await jventService.getUserList(contextEvent.event.url, role);
+        let userList = {
+            list: list,
+            role: role,
+            lastUpdate: Date.now(),
+            //lastQuery: query
+        };
+        return userList;
     };
-    userMembershipService.getUserList = function(role) {
-        return $q(function(resolve, reject) {
-            var userList = userMembershipService.userLists[role];
-            if(userList && !updateRequired(userList)) {
-                resolve(userList);
-            }
-            else {
-                downloadAndCreateList(role)
-                .then(function(uL) {
-                    resolve(uL);
-                });
-            }
-        })
-        .then(function(userList) {
-            userMembershipService.userLists[role] = userList;
-            return userList;
-        });
+    userMembershipService.getUserList = async function(role) {
+        let userList = userMembershipService.userLists[role];
+        if(!userList || updateRequired(userList)) {
+            userList = await downloadAndCreateList(role);
+        }
+        userMembershipService.userLists[role] = userList;
+        return userList;
     };
-    userMembershipService.initialize = function(eventURL) {
-        return contextEvent.getEvent(eventURL)
-        .then(function(event) {
-            //Check for moderator status.
-            return event;
-        })
-        .then(function(event) {
-            userMembershipService.roles = event.roles;
-        });
+    userMembershipService.initialize = async function(eventURL) {
+        let event = await contextEvent.getEvent(eventURL)
+        //Check for moderator status.
+        userMembershipService.roles = event.roles;
     };
     return userMembershipService;
 });
@@ -1143,58 +937,39 @@ app.factory('userMembershipService', function(userService, contextEvent, jventSe
     return eventMembershipService;
 });*/
 
-app.factory('eventMembershipService', function(jventService, userService, EventMembership, $q) {
+app.factory('eventMembershipService', function(jventService, userService, EventMembership) {
     var eventMembershipService = {};
     eventMembershipService.eventMemberships = {};
     eventMembershipService.cacheTime = 60000;
     eventMembershipService.initialFetch = false;
-    eventMembershipService.fetchMembership = function(event) {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            return jventService.getEventMembershipByEventID(event.id)
-        })
-        .then(function(rawEventMembership) {
-            return EventMembership.deserializeObject(rawEventMembership);
-        });
+    eventMembershipService.fetchMembership = async function(event) {
+        let rawEventMembership = await jventService.getEventMembershipByEventID(event.id)
+        return EventMembership.deserializeObject(rawEventMembership);
     };
-    eventMembershipService.fetchMemberships = function() {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            return jventService.getEventMemberships();
-        })
-        .then(function(rawEventMemberships) {
-            return EventMembership.deserializeArray(rawEventMemberships);
-        });
+    eventMembershipService.fetchMemberships = async function() {
+        let rawEventMemberships = await jventService.getEventMemberships();
+        return EventMembership.deserializeArray(rawEventMemberships);
     };
-    eventMembershipService.getEventMembership = function(event) {
+    eventMembershipService.getEventMembership = async function(event) {
         //Returns corresponding eventMembership, or nothing.
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(!userService.authed) return null;
-            var eventMembership = eventMembershipService.eventMemberships[event.url];
-            if(eventMembership && eventMembership.isFetched()) return eventMembership;
-            return eventMembershipService.fetchMembership(event)
-            .then(function(fetchedMembership) {
-                eventMembershipService.eventMemberships[event.url] = fetchedMembership;
-                return fetchedMembership;
-            });
-        });
+        if(!userService.authed) return null;
+        let eventMembership = eventMembershipService.eventMemberships[event.url];
+        if(eventMembership && eventMembership.isFetched()) return eventMembership;
+        
+        let fetchedMembership = await eventMembershipService.fetchMembership(event);
+        eventMembershipService.eventMemberships[event.url] = fetchedMembership;
+        return fetchedMembership;
     };
-    eventMembershipService.getEventMemberships = function() {
+    eventMembershipService.getEventMemberships = async function() {
         //Returns all eventMemberships
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(!userService.authed) return null;
-            if(eventMembershipService.initialFetch) return eventMembershipService.eventMemberships;
-            return eventMembershipService.fetchMemberships()
-            .then(function(fetchedMemberships) {
-                for (var fetchedMembership of fetchedMemberships) {
-                    eventMembershipService.eventMemberships[fetchedMembership.eventURL] = fetchedMembership;
-                }
-                eventMembershipService.initialFetch = true;
-                return eventMembershipService.eventMemberships;
-            });
-        });
+        if(!userService.authed) return null;
+        if(eventMembershipService.initialFetch) return eventMembershipService.eventMemberships;
+        let fetchedMemberships = await eventMembershipService.fetchMemberships();
+        for (let fetchedMembership of fetchedMemberships) {
+            eventMembershipService.eventMemberships[fetchedMembership.eventURL] = fetchedMembership;
+        }
+        eventMembershipService.initialFetch = true;
+        return eventMembershipService.eventMemberships;
     }
     eventMembershipService.retrieveEventMembership = function(eventURL) {
         return eventMembershipService.eventMemberships[eventURL];
@@ -1202,7 +977,6 @@ app.factory('eventMembershipService', function(jventService, userService, EventM
 
     userService.on("login", function() {
         //TODO: Fetch and store user's eventMemberships
-        console.log("asdf");
     });
     userService.on("logout", function() {
         //Delete user's eventMemberships
@@ -1236,25 +1010,19 @@ app.factory('postVoteService', function(jventService, userService) {
             this._.votes = {};
             this.fetchAllVotes();
 
-            var _this = this;
-            userService.on("login", function() {
+            userService.on("login", ()=> {
                 console.log("login")
             })
-            userService.on("logout", function() {
-                _this.flushVotes();
+            userService.on("logout", ()=> {
+                this.flushVotes();
             })
         }
-        fetchAllVotes() {
-            var _this = this;
-            return Q.fcall(function() {
-                return jventService.getPostVotes();
-            })
-            .then(function(rawPostVoteArray) {
-                for (var rawPostVote of rawPostVoteArray) {
-                    var newPostVote = new PostVote(rawPostVote);
-                    _this._.votes[newPostVote.post] = newPostVote;
-                }
-            });
+        async fetchAllVotes() {
+            let rawPostVoteArray = await jventService.getPostVotes();
+            for (let rawPostVote of rawPostVoteArray) {
+                let newPostVote = new PostVote(rawPostVote);
+                this._.votes[newPostVote.post] = newPostVote;
+            }
         }
         flushVotes() {
             this._.votes = {};
@@ -1284,19 +1052,12 @@ app.factory('userListService', function(contextEvent, jventService, $q) {
     var setUserList = function(userList) {
         userListService.userList = userList;
     };
-    userListService.getUserList = function() {
-        return $q(function(resolve, reject) {
-            if(queryChange() || !fresh()) { // OR check if the query result has changed
-                return jventService.getUserList()
-                .then(function(userList) {
-                    setUserList(userList);
-                    return resolve(userList);
-                });
-            }
-            else {
-                return resolve(userListService.userList);
-            }
-        });
+    userListService.getUserList = async function() {
+        if(queryChange() || !fresh()) { // OR check if the query result has changed
+            let userList = await jventService.getUserList()
+            setUserList(userList);
+        }
+        return userListService.userList;
     };
     return userListService;
 });
@@ -1321,8 +1082,8 @@ app.factory('postListService', function(Post, contextEvent, postVoteService, jve
         return (Date.now() - lastUpdate) < postListService.cacheTime;
     };
     var setPostList = function(rawPostList, event) {
-        var newPostList = Post.deserializeArray(rawPostList);
-        for (var post of newPostList) {
+        let newPostList = Post.deserializeArray(rawPostList);
+        for (let post of newPostList) {
             post.on("vote", function(direction) {
                 return jventService.postVote(contextEvent.event.url, this.url, direction);
             });
@@ -1336,20 +1097,13 @@ app.factory('postListService', function(Post, contextEvent, postVoteService, jve
     var requiresUpdate = function() {
         return(queryChange() || !fresh());
     };
-    postListService.getPostList = function(eventURL) {
-        return contextEvent.getEvent(eventURL)
-        .then(function(event) {
-            if(requiresUpdate() || eventChange(event)) {
-                return jventService.getPosts(eventURL)
-                .then(function(rawPostList) {
-                    setPostList(rawPostList, event);
-                    return;
-                });
-            }
-        })
-        .then(function() {
-            return({postList: postListService.postList});
-        });
+    postListService.getPostList = async function(eventURL) {
+        let event = await contextEvent.getEvent(eventURL);
+        if(requiresUpdate() || eventChange(event)) {
+            let rawPostList = await jventService.getPosts(eventURL);
+            setPostList(rawPostList, event);
+        }
+        return({postList: postListService.postList});
     };
 
     return postListService;
@@ -1357,7 +1111,7 @@ app.factory('postListService', function(Post, contextEvent, postVoteService, jve
 //  }
 
 //  Context Providers {
-app.factory('contextEvent', function(eventMembershipService, userService, Event, jventService, $q) {
+app.factory('contextEvent', function(eventMembershipService, userService, Event, jventService) {
     var contextEvent = {};
     contextEvent.event = {};
     contextEvent.cacheTime = 60000;
@@ -1366,48 +1120,33 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     var fresh = function() {
         return (Date.now() - lastUpdate) < contextEvent.cacheTime;
     };
-    var setEvent = function(event) {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            event.on("join", function() {
-                console.log("Joining event");
-                return jventService.joinEvent(event.url);
-            });
-            userService.on("logout", function() {
-                event.eventMembership = null;
-            });
-            return eventMembershipService.getEventMembership(event)
-            .then(function(eventMembership) {
-                event.eventMembership = eventMembership;
-                contextEvent.event = event;
-                lastUpdate = Date.now();
-                contextEvent.loadedEvent = true;
-                return event;
-            });
-        })
+    var setEvent = async function(event) {
+        event.on("join", function() {
+            console.log("Joining event");
+            return jventService.joinEvent(event.url);
+        });
+        userService.on("logout", function() {
+            event.eventMembership = null;
+        });
+        event.eventMembership = await eventMembershipService.getEventMembership(event);
+        contextEvent.event = event;
+        contextEvent.loadedEvent = true;
+        lastUpdate = Date.now();
+        return event;
     };
     var requiresUpdate = function(eventURL) {
         return(eventURL!=contextEvent.event.url||!fresh());
     };
-    contextEvent.getEvent = function(eventURL) {
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            var eventMembership = eventMembershipService.retrieveEventMembership(eventURL);
-            if(!eventMembership) return false;
-            return eventMembership.hasRole("moderator");
-        })
-        .then(function(result) {
-            if(requiresUpdate(eventURL)) {
-                return jventService.getEvent(eventURL, result)
-                .then(function(rawEvent) {
-                    return new Event(rawEvent);
-                })
-                .then(function(event) {
-                    return setEvent(event);
-                });
-            }
-            return contextEvent.event;
-        });
+    contextEvent.getEvent = async function(eventURL) {
+        let eventMembership = eventMembershipService.retrieveEventMembership(eventURL);
+        let result = false;
+        if(eventMembership) result = await eventMembership.hasRole("moderator");
+        if(requiresUpdate(eventURL)) {
+            let rawEvent = await jventService.getEvent(eventURL, result);
+            let event = new Event(rawEvent);
+            await setEvent(event);
+        }
+        return contextEvent.event;
     };
     // contextEvent.join = function() {
     //     return jventService.joinEvent(contextEvent.event.url);
@@ -1415,7 +1154,7 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
     return contextEvent;
 });
 
-app.factory('contextPost', function(contextEvent, mediaService, postVoteService, Media, Post, jventService, $q) {
+app.factory('contextPost', function(contextEvent, mediaService, postVoteService, Media, Post, jventService) {
     var contextPost = {};
     contextPost.post = {};
     contextPost.cacheTime = 60000;
@@ -1445,29 +1184,17 @@ app.factory('contextPost', function(contextEvent, mediaService, postVoteService,
     var requiresUpdate = function(postURL) {
         return(postURL!=contextPost.post.url||!fresh());
     }
-    contextPost.getPost = function(postURL) {
+    contextPost.getPost = async function(postURL) {
         //Verify membership with contextEvent
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            if(requiresUpdate(postURL)) {
-                // return Post.fromPostURL(postURL, contextEvent.event.url)
-                return jventService.getPost(postURL, contextEvent.event.url)
-                .then(function(rawPost) {
-                    return new Post(rawPost);
-                })
-                .then(function(post) {
-                    setPost(post);
-                    return post;
-                });
-            }
-            return contextPost.post;
-        })
-        .then(function(post) {
-            var response = {post: post};
-            if(!post.media || !post.media.media) return response;
-            response.mediaPromise = post.media.media.getAsBlob();
-            return response;
-        });
+        if(requiresUpdate(postURL)) {
+            let rawPost = await jventService.getPost(postURL, contextEvent.event.url);
+            setPost(new Post(rawPost));
+        }
+        let post = contextPost.post;
+        let response = {post: post};
+        if(!post.media || !post.media.media) return response;
+        response.mediaPromise = post.media.media.getAsBlob();
+        return response;
     };
     return contextPost;
 });
@@ -1482,34 +1209,20 @@ app.factory('newEventService', function(userService, validationService, jventSer
         name: userService.user()
     }; //Is this even required?
     
-    var publishImage = function(image) {
-        return jventService.getImageUploadToken(image.name, image.type)
-        .then(function(response) {
-            return awsService.uploadImageToS3(image, response.signedRequest)
-            .then(function() {
-                return response.url;
-            });
-        })
+    var publishImage = async function(image) {
+        let response = await jventService.getImageUploadToken(image.name, image.type);
+        await awsService.uploadImageToS3(image, response.signedRequest);
+        return response.url;
     };
-    newEventService.publish = function() {
-        if(!valid.all()) return; //Throw error?
-        return jventService.createEvent(newEventService.event)
-        .then(function(eventURL) {
-            if(!newEventService.event.backgroundImage || !valid.backgroundImage()) {
-                return(eventURL);
-            }
-            return publishImage(newEventService.event.backgroundImage)
-            .then(function(backgroundImageURL) {
-                return jventService.setEventBackground({link: backgroundImageURL}, eventURL);
-            })
-            .then(function() {
-                return(eventURL);
-            });
-        })
-        .then(function(eventURL) {
-            reset();
-            return(eventURL);
-        });
+    newEventService.publish = async function() {
+        if(!valid.all()) throw Error("Validation Failed");
+        let eventURL = await jventService.createEvent(newEventService.event);
+        if(newEventService.event.backgroundImage && valid.backgroundImage()) {
+            let backgroundImageURL = await publishImage(newEventService.event.backgroundImage);
+            await jventService.setEventBackground({link: backgroundImageURL}, eventURL);
+        }
+        reset();
+        return(eventURL);
     };
     
     var reset = function() {
@@ -1551,17 +1264,15 @@ app.factory('newMediaService', function(userService, contextEvent, validationSer
     var newMediaService = {};
     var media = {};
     newMediaService.media = media;
-    newMediaService.publish = function() {
+    newMediaService.publish = async function() {
         if(!valid.all()) throw Error("Validation Failed");
-        return jventService.createMedia(newMediaService.media, contextEvent.event.url)
-        .then(function(mediaURL) {
-            reset();
-            return(mediaURL);
-        });
+        let mediaURL = await jventService.createMedia(newMediaService.media, contextEvent.event.url);
+        reset();
+        return(mediaURL);
     };
     var valid = {
         link: function() {
-            return validationService(newMediaService.   media.link).isLink();
+            return validationService(newMediaService.media.link).isLink();
         },
         all: function() {
             return (valid.link());
@@ -1584,27 +1295,19 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
     var post = {};
     newPostService.post = post;
     newPostService.media = newMediaService.media;
-    var publishPost = function() {
-        return Q.fcall(function() {
-            if(!valid.all()) throw new Error("Validation Failed");
-            return jventService.createPost(undefined, newPostService.post, contextEvent.event.url)
-        })
-        .then(function(response) {
-            reset();
-            return(response);
-        });
+    var publishPost = async function() {
+        if(!valid.all()) throw new Error("Validation Failed");
+        let response = await jventService.createPost(undefined, newPostService.post, contextEvent.event.url)
+        reset();
+        return(response);
     };
-    var publishPostAndMedia = function() {
-        return Q.fcall(function() {
-            if(!valid.all()||!newMediaService.valid.all()) throw new Error("Validation Failed");
-            return jventService.createPost(newMediaService.media, newPostService.post, contextEvent.event.url)
-        })
-        .then(function(response) {
-            reset();
-            return(response);
-        });
+    var publishPostAndMedia = async function() {
+        if(!valid.all()||!newMediaService.valid.all()) throw new Error("Validation Failed");
+        let response = await jventService.createPost(newMediaService.media, newPostService.post, contextEvent.event.url);
+        reset();
+        return(response);
     };
-    newPostService.publish = function() {
+    newPostService.publish = async function() {
         if(newMediaService.initialized()) {
             return publishPostAndMedia();
         }
@@ -1667,28 +1370,24 @@ app.controller('homeController', function($scope, $rootScope, eventMembershipSer
 
 //Event
 app.controller('eventListCtrl', function($scope, eventListService, navService, $q) {
-    $scope.loadEventMedia = function(event) {
-        return event.backgroundImage.getAsBlob()
-        .then(function(blobURL) {
-            event.image = blobURL;
-        });
+    $scope.loadEventMedia = async function(event) {
+        event.image = await event.backgroundImage.getAsBlob();
     }
-    $scope.loadEvents = function(eventList) {
+    $scope.loadEvents = async function(eventList) {
         //  TODO: Super temporary. Get rid of this crap.
-        return $q((resolve, reject) => {resolve()})
-        .then(function() {
-            $scope.eventArray = eventList;
-            var mediaPromises = [];
-            for (let event of eventList) {
-                if(!event.backgroundImage) continue;
-                mediaPromises.push($scope.loadEventMedia(event));
-            }
-            return $q.all(mediaPromises);
-        })
+        $scope.eventArray = eventList;
+        // let mediaPromises = [];
+        //  TODO: Decide whether to load event background sequentially, or in parallel.
+        for (let event of eventList) {
+            if(!event.backgroundImage) continue;
+            // mediaPromises.push($scope.loadEventMedia(event)); //This one loads in parallel
+            await $scope.loadEventMedia(event); //This one loads sequentially
+        }
+        // return $q.all(mediaPromises);
     }
-    $scope.initialize = function() {
-        return eventListService.getEventList()
-        .then($scope.loadEvents);
+    $scope.initialize = async function() {
+        $scope.loadEvents(await eventListService.getEventList());
+        $scope.$applyAsync();
     };
     $scope.initialize();
     // $scope.query = {
@@ -1717,23 +1416,23 @@ app.controller('newEventCtrl', function($scope, userService, newEventService, di
         return !$scope.pendingRequest && $scope.valid.all();
     };
     $scope.pendingRequest = false;
-    $scope.createEvent = function() {
-        if(!$scope.pendingRequest) {
+    $scope.createEvent = async function() {
+        if($scope.pendingRequest) return;
+        try {
             $scope.pendingRequest = true;
-            newEventService.publish()
-            .then(function(eventURL) {
-                navService.event(eventURL);
-            },
-            function(error) {
-                dialogService.paramMsgArrayError(error)
-            })
-            .finally(function() {
-                $scope.pendingRequest = false;
-            });
+            let eventURL = await newEventService.publish();
+            navService.event(eventURL);
+        }
+        catch (error) {
+            dialogService.paramMsgArrayError(error);
+        }
+        finally {
+            $scope.pendingRequest = false;
+            $scope.$applyAsync();
         }
     };
     $scope.backgroundImageChange = function(e) {
-        var imageFiles = e.target.files[0];
+        let imageFiles = e.target.files[0];
         $scope.newEvent.backgroundImage = imageFiles;
         $scope.backgroundImagePreviewURL = URL.createObjectURL(imageFiles);
         //move $scope.backgroundImagePreviewURL to $scope.newEvent?
@@ -1751,32 +1450,35 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
     $scope.loadEvent = function(event) {
         $scope.event = event;
         $scope.loaded = true;
+        $scope.$digest();
     };
-    $scope.refresh = function() {
-        return contextEvent.getEvent($routeParams.eventURL)
-        .then($scope.loadEvent)
-        .catch(function(error) {
+    $scope.refresh = async function() {
+        try {
+            $scope.loadEvent(await contextEvent.getEvent($routeParams.eventURL));
+        }
+        catch (error) {
             dialogService.networkError(error);
-        });
+        }
     };
     $scope.refresh();
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
 
     $scope.joinPending = false;
-    $scope.join = function() {
+    $scope.join = async function() {
         //Make sure request can be made
         $scope.joinPending = true;
-        contextEvent.event.join()
-        .then(function() {
+        try {
+            await contextEvent.event.join();
             //Redirect to content upon success
             console.log("Joined event");
-        })
-        .catch(function(err) {
-            //err
-        })
-        .finally(function() {
+        }
+        catch (error) {
+            console.log(error);
+        }
+        finally {
             $scope.joinPending = false;
-        });
+            $scope.$digest();
+        }
     };
     $scope.view = function() {
         navService.posts(contextEvent.event.url);
@@ -1802,55 +1504,44 @@ app.controller('eventCtrl', function($scope, $routeParams, contextEvent, markdow
 
 app.controller('userListCtrl', function($scope, $routeParams, userMembershipService) {
     $scope.selectedList = {};
-    $scope.refresh = function() {
-        return userMembershipService.initialize($routeParams.eventURL)
-        .then(function() {
-            $scope.roles = userMembershipService.roles;
-        });
+    $scope.refresh = async function() {
+        await userMembershipService.initialize($routeParams.eventURL);
+        $scope.roles = userMembershipService.roles;
     };
     $scope.refresh();
-    $scope.getUserList = function(role) {
-        userMembershipService.getUserList(role)
-        .then(function(userList) {
-            $scope.selectedList = userList;
-            console.log(userList);
-        });
+    $scope.getUserList = async function(role) {
+        let userList = await userMembershipService.getUserList(role);
+        $scope.selectedList = userList;
+        console.log(userList);
     };
 });
 
 app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventService, dialogService, postVoteService, awsService) {
     $scope.loaded = false;
-    $scope.loadEvent = function(event) {
+    $scope.loadEvent = async function(event) {
         $scope.event = event;
         console.log($scope.event)
         console.log(postVoteService)
-        postVoteService.fetchAllVotes();
+        await postVoteService.fetchAllVotes();
         $scope.loaded = true;
     };
-    $scope.refresh = function() {
-        return contextEvent.getEvent($routeParams.eventURL)
-        .then($scope.loadEvent)
-        .catch(function(error) {
+    $scope.refresh = async function() {
+        try {
+            $scope.loadEvent(await contextEvent.getEvent($routeParams.eventURL));
+        }
+        catch (error) {
             dialogService.networkError(error)
-        });
+        }
     };
     $scope.refresh();
-    $scope.setEventBackground = function() {
+    $scope.setEventBackground = async function() {
         // var media = {
         //     link: $scope.backgroundLink
         // }
-        var image = $("#filePicker")[0].files[0];
-        jventService.getImageUploadToken(image.name, image.type)
-        .then(function(response) {
-            console.log(response)
-            return awsService.uploadImageToS3(image, response.signedRequest)
-            .then(function() {
-                return response.url;
-            });
-        })
-        .then(function(url) {
-            jventService.setEventBackground({link: url}, $scope.event.url);
-        });
+        let image = $("#filePicker")[0].files[0];
+        let response = await jventService.getImageUploadToken(image.name, image.type);
+        await awsService.uploadImageToS3(image, response.signedRequest)
+        await jventService.setEventBackground({link: response.url}, $scope.event.url);
     };
 });
 
@@ -1858,17 +1549,15 @@ app.controller('debugCtrl', function($scope, $routeParams, contextEvent, jventSe
 app.controller('postListCtrl', function($scope, $routeParams, contextEvent, postListService, timeService, navService) {
     $scope.loaded = false;
 
-    $scope.initialize = function() {
-        contextEvent.getEvent($routeParams.eventURL)
-        .then(function(event) {
-            $scope.event = event;
-            return postListService.getPostList($routeParams.eventURL)
-            .then($scope.loadPosts);
-        });
+    $scope.initialize = async function() {
+        let event = await contextEvent.getEvent($routeParams.eventURL);
+        $scope.event = event;
+        $scope.loadPosts(await postListService.getPostList($routeParams.eventURL));
     };
     $scope.loadPosts = function(response) {
         $scope.postList = response.postList;
         $scope.loaded = true;
+        $scope.$digest();
         //TODO: MEDIA?
     };
 
@@ -1910,14 +1599,13 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
         navService.login();
     }
     newPostService.reset();
-    $scope.refresh = function() {
-        return contextEvent.getEvent($routeParams.eventURL)
-        .then(function(event) {
-            $scope.event = event;
-        })
-        .catch(function(error) {
+    $scope.refresh = async function() {
+        try {
+            $scope.event = await contextEvent.getEvent($routeParams.eventURL);
+        }
+        catch (error) {
             dialogService.networkError(error);
-        });
+        }
     };
     $scope.refresh();
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
@@ -1930,19 +1618,19 @@ app.controller('newPostCtrl', function($scope, $routeParams, userService, newMed
         return !$scope.pendingRequest && $scope.validPost.all() && (validMedia);
     };
     $scope.pendingRequest = false;
-    $scope.createPost = function() {
-        if(!$scope.pendingRequest) {
+    $scope.createPost = async function() {
+        if($scope.pendingRequest) return;
+        try {
             $scope.pendingRequest = true;
-            newPostService.publish()
-            .then(function(response) {
-                navService.post($scope.event.url, response.postURL);
-            })
-            .catch(function(error) {
-                dialogService.genericError(error);
-            })
-            .finally(function() {
-                $scope.pendingRequest = false;
-            });
+            let response = await newPostService.publish();
+            navService.post($scope.event.url, response.postURL);
+        }
+        catch (error) {
+            dialogService.genericError(error);
+        }
+        finally {
+            $scope.$applyAsync();
+            $scope.pendingRequest = false;
         }
     };
 });
@@ -1951,26 +1639,23 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
     $scope.loaded = false;
     $scope.descriptionAsHTML = markdownService.returnMarkdownAsTrustedHTML;
 
-    $scope.initialize = function() {
-        contextEvent.getEvent($routeParams.eventURL)
-        .then(function(event) {
-            $scope.event = event;
-            return contextPost.getPost($routeParams.postURL) // Where is event resolved?
-            .then($scope.loadPost)
-            .catch(function(error) {
-                dialogService.networkError(error)
-            });
-        });
+    $scope.initialize = async function() {
+        try {
+            $scope.event = await contextEvent.getEvent($routeParams.eventURL);
+            $scope.loadPost(await contextPost.getPost($routeParams.postURL)); // Where is event resolved?
+        }
+        catch (error) {
+            dialogService.networkError(error)
+        }
+        $scope.$applyAsync();
     };
-    $scope.loadPost = function(response) {
-        var post = response.post;
+    $scope.loadPost = async function(response) {
+        let post = response.post;
         $scope.post = post;
         $scope.loaded = true;
         if(!response.mediaPromise) return;
-        response.mediaPromise
-        .then(function(mediaBlobURL) {
-            console.log(mediaBlobURL);
-        })
+        let mediaBlobURL = await response.mediaPromise;
+        console.log(mediaBlobURL);
     };
 
     $scope.titleClick = function() {
@@ -1979,12 +1664,12 @@ app.controller('postCtrl', function($scope, $routeParams, contextPost, contextEv
 
     $scope.getTimeString = function(timeType) {
         if(!$scope.loaded) return "Somewhere back in time... or not.";
-        var time = $scope.post.time[timeType];
+        let time = $scope.post.time[timeType];
         return timeService.timeSinceString(time);
     };
     $scope.getTime = function(timeType) {
         if(!$scope.loaded) return "Somewhere back in time... or not.";
-        var time = $scope.post.time[timeType];
+        let time = $scope.post.time[timeType];
         return timeService.timeAsUTC(time);
     };
 
@@ -2027,15 +1712,14 @@ app.controller('signUpCtrl', function($scope, userService, navService) {
     $scope.validPassword = function() {
         return userService.validPassword($scope.newUser.password, $scope.newUser.repassword);
     };
-    $scope.createAccount = function () {
+    $scope.createAccount = async function() {
         if($scope.validPassword() && $scope.newUser.email && $scope.newUser.username) {
-            userService.register($scope.newUser)
-            .then(function(status) {
-                if(status.success) {
-                    navService.login();
-                }
-            });
+            let status = await userService.register($scope.newUser);
+            if(status.success) {
+                navService.login();
+            }
         }
+        $scope.$applyAsync();
     };
 });
 
@@ -2044,35 +1728,30 @@ app.controller('loginCtrl', function($scope, userService, navService, dialogServ
     $scope.password;
     $scope.remainSignedIn = false;
     $scope.signInPending = false;
-    $scope.signIn = function() {
-        if($scope.email && $scope.password) {
-            $scope.signInPending = true;
-            var creds = {
-                email: $scope.email,
-                password: $scope.password
-            };
-            var options = {
-                remainSignedIn: $scope.remainSignedIn
-            }
-            userService.login(creds, options)
-            .then(function(success) {
-                if(success) {
-                    navService.home();
-                }
-                else {
-                    $scope.password = "";
-                    dialogService.message("That failed. Check your creds.")
-                }
-            })
-            .finally(function() {
-                $scope.signInPending = false;
-            });
+    $scope.signIn = async function() {
+        if(!$scope.email || !$scope.password) return;
+        $scope.signInPending = true;
+        let creds = {
+            email: $scope.email,
+            password: $scope.password
+        };
+        let options = {
+            remainSignedIn: $scope.remainSignedIn
         }
+        let loginSuccess = await userService.login(creds, options);
+        if(loginSuccess) {
+            navService.home();
+        }
+        else {
+            $scope.password = "";
+            dialogService.message("That failed. Check your creds.")
+        }
+        $scope.signInPending = false;
+        $scope.$applyAsync();
     };
     $scope.signUp = function() {
         navService.signup();
     };
-    console.log(userService);
 });
 
 app.controller('logoutCtrl', function($scope, userService, navService) {
@@ -2085,12 +1764,10 @@ app.controller('logoutCtrl', function($scope, userService, navService) {
 app.controller('eventMembershipCtrl', function($scope, eventMembershipService, navService) {
     $scope.selectedList = {};
     $scope.roles = ["attendee", "viewer", "invite", "moderator"];
-    $scope.getEventList = function(role) {
-        eventMembershipService.getEventList(role)
-        .then(function(eventList) {
-            $scope.selectedList = eventList;
-            console.log(eventList);
-        });
+    $scope.getEventList = async function(role) {
+        let eventList = await eventMembershipService.getEventList(role);
+        $scope.selectedList = eventList;
+        console.log(eventList);
     };
     $scope.navigateEvent = function(eventURL) {
         navService.event(eventURL);
@@ -2101,13 +1778,9 @@ app.controller('changePasswordCtrl', function($scope, userService) {
     $scope.oldpassword;
     $scope.password;
     $scope.repassword;
-    $scope.changePassword = function() {
-        if($scope.validPassword() && $scope.oldpassword) {
-            userService.changePassword($scope.oldpassword, $scope.password)
-            .then(function(status) {
-                //TODO: Handle
-            });
-        }
+    $scope.changePassword = async function() {
+        if(!$scope.validPassword() || !$scope.oldpassword) return;
+        let status = await userService.changePassword($scope.oldpassword, $scope.password);
     };
     $scope.validPassword = function() {
         return userService.validPassword($scope.password, $scope.repassword);
