@@ -264,37 +264,36 @@ app.service('dialogService', function() {
 
 //  Data Services {
 app.factory('userService', function($rootScope, urlService, $http) {
-    var obj = {};
-    obj.authed = false;
-    obj.authStore = null;
-    obj.timeCreated = Date.now();
-    obj._events = {};
+    var userService = {};
+    userService.authed = false;
+    userService.authStore = null;
+    userService.timeCreated = Date.now();
+    userService._events = {};
     var logoutCallbacks = [];
     var getAuthStore = function() {
-        let storage = [window.localStorage, window.sessionStorage];
-        for(var i = 0; i<storage.length;i++) {
-            if(storage[i].token) {
-                return storage[i];
+        let stores = [window.localStorage, window.sessionStorage];
+        for(let store of stores) {
+            if(store.token) {
+                return store;
             }
         }
         return(null);
     };
     var setAuthStore = function(remainSignedIn) {
         if(remainSignedIn) {
-            obj.authStore = window.localStorage;
+            userService.authStore = window.localStorage;
         }
         else {
-            obj.authStore = window.sessionStorage;
+            userService.authStore = window.sessionStorage;
         }
     };
     var storeToken = function(token) {
-        if(obj.authStore) {
-            obj.authStore.token = token;
-        }
+        if(!userService.authStore) return;
+        userService.authStore.token = token;
     };
     var setAuthHeader = function(token) {
         console.log("Setting Auth Header");
-        $http.defaults.headers.common['Authorization'] = 'JWT '+ token;
+        $http.defaults.headers.common['Authorization'] = `JWT ${token}`;
     };
     var deleteAuthHeader = function() {
         console.log("Deleting Auth Header");
@@ -312,23 +311,23 @@ app.factory('userService', function($rootScope, urlService, $http) {
     };
     var loadUser = function() {
         console.log("Searching for User");
-        obj.authStore = getAuthStore();
-        if(obj.authStore){
-            obj.authed = true;
-            setAuthHeader(obj.authStore.token);
+        userService.authStore = getAuthStore();
+        if(userService.authStore){
+            userService.authed = true;
+            setAuthHeader(userService.authStore.token);
             $rootScope.authed = true;
             //Update user data in root scope
-            obj.invoke("login");
+            userService.invoke("login");
             console.log("Loaded User");
         }
     };
-    obj.invoke = invoke.bind(obj);
-    obj.on = on.bind(obj);
+    userService.invoke = invoke.bind(userService);
+    userService.on = on.bind(userService);
 
-    obj.isAuthed = function() {
-        return(obj.authed);
+    userService.isAuthed = function() {
+        return(userService.authed);
     };
-    obj.login = async function(creds, options) {
+    userService.login = async function(creds, options) {
         try {
             let token = await getTokenFromServer(creds)
             setAuthStore(options.remainSignedIn);
@@ -336,22 +335,22 @@ app.factory('userService', function($rootScope, urlService, $http) {
             setAuthHeader(token);
             //Update user data in root scope
             $rootScope.authed = true;
-            obj.authed = true;
+            userService.authed = true;
             return true;
         }
         catch (error) {
             return false;
         }
     };
-    obj.logout = function() {
-        obj.authStore.removeItem("token");
+    userService.logout = function() {
+        userService.authStore.removeItem("token");
         deleteAuthHeader();
         $rootScope.authed = false;
         //Delete user data in root scope
-        obj.invoke("logout");
-        obj.authed = false;
+        userService.invoke("logout");
+        userService.authed = false;
     };
-    obj.register = async function(user) {
+    userService.register = async function(user) {
         let req = {
             method: 'POST',
             url: urlService.userSignUp(),
@@ -364,7 +363,7 @@ app.factory('userService', function($rootScope, urlService, $http) {
             return {success: true, err: null};
         }
     };
-    obj.changePassword = async function(oldpassword, newpassword) {
+    userService.changePassword = async function(oldpassword, newpassword) {
         let req = {
             method: 'POST',
             url: urlService.userMeChangePassword(),
@@ -376,16 +375,16 @@ app.factory('userService', function($rootScope, urlService, $http) {
         let response = await $http(req);
         console.log(response.data); //TODO: write handler
     };
-    obj.user = function() {
+    userService.user = function() {
         return "Username here";
     };
-    obj.validPassword = function(password, repassword) {
+    userService.validPassword = function(password, repassword) {
         if(!password) return false;
         if(password == repassword) return(true);
         return(false);
     };
     loadUser();
-    return(obj);
+    return(userService);
 });
 
 app.service('jventService', function(urlService, $http) {
