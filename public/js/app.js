@@ -197,7 +197,9 @@ app.service('navService', function($location) {
     this.logout = ()=> $location.path(`/logout`);
     this.signup = ()=> $location.path(`/signup`);
 });
+//  }
 
+//  Auxiliary Service {
 app.service('validationService', function() {
     return function(value) {
         return {
@@ -219,7 +221,6 @@ app.service('validationService', function() {
         };
     };
 });
-//  }
 
 app.service('markdownService', function($sce) {
     // TODO
@@ -259,8 +260,9 @@ app.service('dialogService', function() {
         Materialize.toast(message);
     };
 });
+//  }
 
-
+//  Data Services {
 app.factory('userService', function($rootScope, urlService, $http) {
     var obj = {};
     obj.authed = false;
@@ -563,6 +565,7 @@ app.service('mediaService', function($http) {
         };
     };
 });
+//  }
 
 //  Types {
 app.service('Media', function($http, $q) {
@@ -870,72 +873,6 @@ app.factory('userMembershipService', function(userService, contextEvent, jventSe
     };
     return userMembershipService;
 });
-
-/*app.factory('eventMembershipService', function(userService, jventService, $q) {
-    var eventMembershipService = {};
-    eventMembershipService.eventLists = {};
-    eventMembershipService.cacheTime = 60000;
-    eventMembershipService.roles = [];
-    var updateRequired = function(eventList) {};
-    var downloadAndCreateList = function(role) {
-        return jventService.getEventMembershipList(role)
-        .then(function(list) {
-            var eventList = {
-                list: list,
-                role: role,
-                lastUpdate: Date.now()
-                //lastQuery: query
-            };
-            return eventList;
-        });
-    };
-    var getEventList = function(role) {
-        return $q(function(resolve, reject) {
-            var eventList = eventMembershipService.eventLists[role];
-            if(eventList && !updateRequired(eventList)) {
-                resolve(eventList);
-            }
-            else {
-                downloadAndCreateList(role)
-                .then(function(eL) {
-                    resolve(eL);
-                });
-            }
-        })
-        .then(function(eventList) {
-            eventMembershipService.eventLists[role] = eventList;
-            return eventList;
-        });
-    };
-    var isEventInList = function(list, eventURL) {
-        //TODO: Better implementation
-        for(var eventMembership of list) {
-            if(eventMembership._eventMembership.event.url==eventURL) {
-                return true;
-            }
-        }
-        return false;
-    };
-    eventMembershipService.getEventList = getEventList;
-    eventMembershipService.isEventRole = function(role, eventURL) {
-        return $q(function(resolve, reject) {
-            if(userService.authed) {
-                getEventList(role)
-                .then(function(eventList) {
-                    resolve(isEventInList(eventList.list, eventURL));
-                });
-            }
-            else {
-                resolve(false);
-            }
-        });
-    };
-    userService.on("logout", function() {
-        eventMembershipService.eventLists = {};
-        eventMembershipService.roles = [];
-    });
-    return eventMembershipService;
-});*/
 
 app.factory('eventMembershipService', function(jventService, userService, EventMembership) {
     var eventMembershipService = {};
