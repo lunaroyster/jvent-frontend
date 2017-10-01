@@ -197,7 +197,9 @@ app.service('navService', function($location) {
     this.logout = ()=> $location.path(`/logout`);
     this.signup = ()=> $location.path(`/signup`);
 });
+//  }
 
+//  Auxiliary Service {
 app.service('validationService', function() {
     return function(value) {
         return {
@@ -219,7 +221,6 @@ app.service('validationService', function() {
         };
     };
 });
-//  }
 
 app.service('markdownService', function($sce) {
     // TODO
@@ -259,40 +260,40 @@ app.service('dialogService', function() {
         Materialize.toast(message);
     };
 });
+//  }
 
-
+//  Data Services {
 app.factory('userService', function($rootScope, urlService, $http) {
-    var obj = {};
-    obj.authed = false;
-    obj.authStore = null;
-    obj.timeCreated = Date.now();
-    obj._events = {};
+    var userService = {};
+    userService.authed = false;
+    userService.authStore = null;
+    userService.timeCreated = Date.now();
+    userService._events = {};
     var logoutCallbacks = [];
     var getAuthStore = function() {
-        let storage = [window.localStorage, window.sessionStorage];
-        for(var i = 0; i<storage.length;i++) {
-            if(storage[i].token) {
-                return storage[i];
+        let stores = [window.localStorage, window.sessionStorage];
+        for(let store of stores) {
+            if(store.token) {
+                return store;
             }
         }
         return(null);
     };
     var setAuthStore = function(remainSignedIn) {
         if(remainSignedIn) {
-            obj.authStore = window.localStorage;
+            userService.authStore = window.localStorage;
         }
         else {
-            obj.authStore = window.sessionStorage;
+            userService.authStore = window.sessionStorage;
         }
     };
     var storeToken = function(token) {
-        if(obj.authStore) {
-            obj.authStore.token = token;
-        }
+        if(!userService.authStore) return;
+        userService.authStore.token = token;
     };
     var setAuthHeader = function(token) {
         console.log("Setting Auth Header");
-        $http.defaults.headers.common['Authorization'] = 'JWT '+ token;
+        $http.defaults.headers.common['Authorization'] = `JWT ${token}`;
     };
     var deleteAuthHeader = function() {
         console.log("Deleting Auth Header");
@@ -310,23 +311,23 @@ app.factory('userService', function($rootScope, urlService, $http) {
     };
     var loadUser = function() {
         console.log("Searching for User");
-        obj.authStore = getAuthStore();
-        if(obj.authStore){
-            obj.authed = true;
-            setAuthHeader(obj.authStore.token);
+        userService.authStore = getAuthStore();
+        if(userService.authStore){
+            userService.authed = true;
+            setAuthHeader(userService.authStore.token);
             $rootScope.authed = true;
             //Update user data in root scope
-            obj.invoke("login");
+            userService.invoke("login");
             console.log("Loaded User");
         }
     };
-    obj.invoke = invoke.bind(obj);
-    obj.on = on.bind(obj);
+    userService.invoke = invoke.bind(userService);
+    userService.on = on.bind(userService);
 
-    obj.isAuthed = function() {
-        return(obj.authed);
+    userService.isAuthed = function() {
+        return(userService.authed);
     };
-    obj.login = async function(creds, options) {
+    userService.login = async function(creds, options) {
         try {
             let token = await getTokenFromServer(creds)
             setAuthStore(options.remainSignedIn);
@@ -334,22 +335,22 @@ app.factory('userService', function($rootScope, urlService, $http) {
             setAuthHeader(token);
             //Update user data in root scope
             $rootScope.authed = true;
-            obj.authed = true;
+            userService.authed = true;
             return true;
         }
         catch (error) {
             return false;
         }
     };
-    obj.logout = function() {
-        obj.authStore.removeItem("token");
+    userService.logout = function() {
+        userService.authStore.removeItem("token");
         deleteAuthHeader();
         $rootScope.authed = false;
         //Delete user data in root scope
-        obj.invoke("logout");
-        obj.authed = false;
+        userService.invoke("logout");
+        userService.authed = false;
     };
-    obj.register = async function(user) {
+    userService.register = async function(user) {
         let req = {
             method: 'POST',
             url: urlService.userSignUp(),
@@ -362,7 +363,7 @@ app.factory('userService', function($rootScope, urlService, $http) {
             return {success: true, err: null};
         }
     };
-    obj.changePassword = async function(oldpassword, newpassword) {
+    userService.changePassword = async function(oldpassword, newpassword) {
         let req = {
             method: 'POST',
             url: urlService.userMeChangePassword(),
@@ -374,16 +375,16 @@ app.factory('userService', function($rootScope, urlService, $http) {
         let response = await $http(req);
         console.log(response.data); //TODO: write handler
     };
-    obj.user = function() {
+    userService.user = function() {
         return "Username here";
     };
-    obj.validPassword = function(password, repassword) {
+    userService.validPassword = function(password, repassword) {
         if(!password) return false;
         if(password == repassword) return(true);
         return(false);
     };
     loadUser();
-    return(obj);
+    return(userService);
 });
 
 app.service('jventService', function(urlService, $http) {
@@ -530,18 +531,6 @@ app.service('awsService', function($http) {
 
 app.service('mediaService', function($http) {
     return function(media) {
-        /* var requestFunction = function() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'https://i.imgur.com/7hCs9b8.png', true);
-            xhr.responseType = 'blob';
-
-            xhr.onload = function(e) {
-              if (this.status == 200) {
-                var blob = new Blob([this.response], {type: 'image/png'});
-                console.log(URL.createObjectURL(blob))
-              }
-            };
-        }; */
         var requestFunction = async function() {
             let config = {
                 method: 'GET',
@@ -563,6 +552,7 @@ app.service('mediaService', function($http) {
         };
     };
 });
+//  }
 
 //  Types {
 app.service('Media', function($http, $q) {
@@ -871,72 +861,6 @@ app.factory('userMembershipService', function(userService, contextEvent, jventSe
     return userMembershipService;
 });
 
-/*app.factory('eventMembershipService', function(userService, jventService, $q) {
-    var eventMembershipService = {};
-    eventMembershipService.eventLists = {};
-    eventMembershipService.cacheTime = 60000;
-    eventMembershipService.roles = [];
-    var updateRequired = function(eventList) {};
-    var downloadAndCreateList = function(role) {
-        return jventService.getEventMembershipList(role)
-        .then(function(list) {
-            var eventList = {
-                list: list,
-                role: role,
-                lastUpdate: Date.now()
-                //lastQuery: query
-            };
-            return eventList;
-        });
-    };
-    var getEventList = function(role) {
-        return $q(function(resolve, reject) {
-            var eventList = eventMembershipService.eventLists[role];
-            if(eventList && !updateRequired(eventList)) {
-                resolve(eventList);
-            }
-            else {
-                downloadAndCreateList(role)
-                .then(function(eL) {
-                    resolve(eL);
-                });
-            }
-        })
-        .then(function(eventList) {
-            eventMembershipService.eventLists[role] = eventList;
-            return eventList;
-        });
-    };
-    var isEventInList = function(list, eventURL) {
-        //TODO: Better implementation
-        for(var eventMembership of list) {
-            if(eventMembership._eventMembership.event.url==eventURL) {
-                return true;
-            }
-        }
-        return false;
-    };
-    eventMembershipService.getEventList = getEventList;
-    eventMembershipService.isEventRole = function(role, eventURL) {
-        return $q(function(resolve, reject) {
-            if(userService.authed) {
-                getEventList(role)
-                .then(function(eventList) {
-                    resolve(isEventInList(eventList.list, eventURL));
-                });
-            }
-            else {
-                resolve(false);
-            }
-        });
-    };
-    userService.on("logout", function() {
-        eventMembershipService.eventLists = {};
-        eventMembershipService.roles = [];
-    });
-    return eventMembershipService;
-});*/
-
 app.factory('eventMembershipService', function(jventService, userService, EventMembership) {
     var eventMembershipService = {};
     eventMembershipService.eventMemberships = {};
@@ -1148,9 +1072,6 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
         }
         return contextEvent.event;
     };
-    // contextEvent.join = function() {
-    //     return jventService.joinEvent(contextEvent.event.url);
-    // };
     return contextEvent;
 });
 
@@ -1175,12 +1096,6 @@ app.factory('contextPost', function(contextEvent, mediaService, postVoteService,
         lastUpdate = Date.now();
         contextPost.loadedPost = true;
     };
-    // var resolveMedia = function() {
-    //     return $q((resolve, reject) => {resolve()})
-    //     .then(function() {
-    //         mediaService(contextPost.post.media).getMediaBlob()
-    //     })
-    // }
     var requiresUpdate = function(postURL) {
         return(postURL!=contextPost.post.url||!fresh());
     }
@@ -1334,7 +1249,6 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
 //  }
 
 //  Controllers {
-
 app.controller('homeController', function($scope, $rootScope, eventMembershipService, postVoteService, userService, navService, $location) {
     $scope.homeClick = function() {
         navService.home();
@@ -1365,7 +1279,6 @@ app.controller('homeController', function($scope, $rootScope, eventMembershipSer
         navService.signup();
     };
     $scope.userService = userService;
-    // setInterval(function() {console.log(userService)}, 1000);
 });
 
 //Event
