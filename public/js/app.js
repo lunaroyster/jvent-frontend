@@ -532,18 +532,6 @@ app.service('awsService', function($http) {
 
 app.service('mediaService', function($http) {
     return function(media) {
-        /* var requestFunction = function() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'https://i.imgur.com/7hCs9b8.png', true);
-            xhr.responseType = 'blob';
-
-            xhr.onload = function(e) {
-              if (this.status == 200) {
-                var blob = new Blob([this.response], {type: 'image/png'});
-                console.log(URL.createObjectURL(blob))
-              }
-            };
-        }; */
         var requestFunction = async function() {
             let config = {
                 method: 'GET',
@@ -1085,9 +1073,6 @@ app.factory('contextEvent', function(eventMembershipService, userService, Event,
         }
         return contextEvent.event;
     };
-    // contextEvent.join = function() {
-    //     return jventService.joinEvent(contextEvent.event.url);
-    // };
     return contextEvent;
 });
 
@@ -1112,12 +1097,6 @@ app.factory('contextPost', function(contextEvent, mediaService, postVoteService,
         lastUpdate = Date.now();
         contextPost.loadedPost = true;
     };
-    // var resolveMedia = function() {
-    //     return $q((resolve, reject) => {resolve()})
-    //     .then(function() {
-    //         mediaService(contextPost.post.media).getMediaBlob()
-    //     })
-    // }
     var requiresUpdate = function(postURL) {
         return(postURL!=contextPost.post.url||!fresh());
     }
@@ -1271,7 +1250,6 @@ app.factory('newPostService', function(userService, contextEvent, newMediaServic
 //  }
 
 //  Controllers {
-
 app.controller('homeController', function($scope, $rootScope, eventMembershipService, postVoteService, userService, navService, $location) {
     $scope.homeClick = function() {
         navService.home();
@@ -1302,7 +1280,6 @@ app.controller('homeController', function($scope, $rootScope, eventMembershipSer
         navService.signup();
     };
     $scope.userService = userService;
-    // setInterval(function() {console.log(userService)}, 1000);
 });
 
 //Event
